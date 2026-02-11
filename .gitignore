@@ -71,7 +71,12 @@ sdk/node_modules/
 .oracle/logs/
 .oracle/.env
 
-# ── Indexer ──────────────────────────────────────────────────────────────────
+# ── Keeper node ──────────────────────────────────────────────────────
+.keeper/node_modules/
+.keeper/logs/
+.keeper/.env
+
+# ── Indexer ──────────────────────────────────────────────────────────
 .indexer/node_modules/
 .indexer/logs/
 .indexer/.env

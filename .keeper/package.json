@@ -1,0 +1,18 @@
+{
+  "name": "ppmm-keeper",
+  "version": "1.0.0",
+  "description": "Off-chain keeper for order execution, liquidation, and vAMM sync on the PPMM Diamond",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js --verbose",
+    "orders-only": "node index.js --orders-only",
+    "liquidations-only": "node index.js --liquidations-only"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0",
+    "dotenv": "^16.4.0",
+    "winston": "^3.11.0",
+    "axios": "^1.7.0"
+  }
+}
