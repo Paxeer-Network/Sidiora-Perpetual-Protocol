@@ -1,0 +1,160 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "contracts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        id: slither
+        with:
+          node-version: "20"
+          slither-config: slither.config.json
+          sarif: slither-report.sarif
+          fail-on: high
+        continue-on-error: true
+
+      - name: Upload Slither SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: slither-report.sarif
+
+      - name: Upload Slither report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slither-report
+          path: |
+            slither-report.json
+            slither-report.sarif
+          retention-days: 30
+
+  mythril:
+    name: Mythril Symbolic Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Mythril
+        run: pip3 install mythril
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Analyze Diamond proxy
+        run: myth analyze contracts/diamond/Diamond.sol --solv 0.8.27 --execution-timeout 300
+        continue-on-error: true
+
+      - name: Analyze PositionFacet
+        run: myth analyze contracts/diamond/facets/trading/PositionFacet.sol --solv 0.8.27 --execution-timeout 300
+        continue-on-error: true
+
+      - name: Analyze LiquidationFacet
+        run: myth analyze contracts/diamond/facets/trading/LiquidationFacet.sol --solv 0.8.27 --execution-timeout 300
+        continue-on-error: true
+
+      - name: Analyze UserVault
+        run: myth analyze contracts/vaults/UserVault.sol --solv 0.8.27 --execution-timeout 300
+        continue-on-error: true
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit npm packages
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities (Snyk)
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  contract-size:
+    name: Contract Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check contract sizes
+        run: npx hardhat size-contracts
+        continue-on-error: true

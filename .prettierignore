@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.indexer/node_modules/
+.oracle/node_modules/
+sdk/node_modules/
+
+# Build artifacts
+artifacts/
+cache/
+dist/
+out/
+sdk/dist/
+
+# Generated
+deployments/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Foundry
+lib/
+broadcast/

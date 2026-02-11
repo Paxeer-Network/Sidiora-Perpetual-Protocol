@@ -1,0 +1,88 @@
+# =============================================================================
+# Sidiora Perpetual Protocol — .gitignore
+# =============================================================================
+
+# ── Environment & Secrets ────────────────────────────────────────────────────
+# CRITICAL: Never commit private keys, passwords, or API secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Node.js ──────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ── Hardhat ──────────────────────────────────────────────────────────────────
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
+gasReport.txt
+
+# ── Foundry ──────────────────────────────────────────────────────────────────
+out/
+forge-cache/
+broadcast/
+lcov.info
+
+# ── Build output ─────────────────────────────────────────────────────────────
+dist/
+build/
+*.tsbuildinfo
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Security analysis ────────────────────────────────────────────────────────
+slither-report.json
+slither-report.sarif
+mythril-report/
+*.myth
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Deployment ───────────────────────────────────────────────────────────────
+# The deployment manifest contains addresses (public) but keep it tracked.
+# Uncomment the next line if you prefer to exclude it:
+# deployments/
+
+# ── SDK build ────────────────────────────────────────────────────────────────
+sdk/dist/
+sdk/node_modules/
+
+# ── Oracle node ──────────────────────────────────────────────────────────────
+.oracle/node_modules/
+.oracle/logs/
+.oracle/.env
+
+# ── Indexer ──────────────────────────────────────────────────────────────────
+.indexer/node_modules/
+.indexer/logs/
+.indexer/.env
+
+# ── Coverage (JS) ────────────────────────────────────────────────────────────
+coverage-js/
+.nyc_output/
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+*.tgz
+*.tar.gz
+.cache/
+tmp/
+temp/

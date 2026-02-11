@@ -1,0 +1,56 @@
+{
+  "name": "perpetual-product-market-maker",
+  "version": "1.0.0",
+  "description": "Perpetual Product Market Maker",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Paxeer-Network/perpetual-product-market-maker.git"
+  },
+  "scripts": {
+    "compile": "hardhat compile",
+    "compile:ts": "hardhat compile --config hardhat.config.ts",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:paxeer": "hardhat run scripts/deploy.js --network paxeer-network",
+    "deploy:cli": "node scripts/deploy-cli.js",
+    "test:paxeer": "hardhat run scripts/e2e-test.js --network paxeer-network",
+    "verify:all": "hardhat run scripts/verify-deployments.js --network paxeer-network",
+    "lint": "pnpm lint:sol && pnpm lint:js",
+    "lint:sol": "solhint 'contracts/**/*.sol' --config .solhint.json",
+    "lint:js": "eslint 'scripts/**/*.js' 'tests/**/*.js' --ext .js,.ts",
+    "lint:fix": "eslint 'scripts/**/*.js' 'tests/**/*.js' --ext .js,.ts --fix",
+    "format": "prettier --write 'contracts/**/*.sol' 'scripts/**/*.js' 'tests/**/*.js'",
+    "format:check": "prettier --check 'contracts/**/*.sol' 'scripts/**/*.js' 'tests/**/*.js'",
+    "size": "hardhat size-contracts",
+    "gas": "REPORT_GAS=true hardhat test",
+    "coverage": "hardhat coverage",
+    "slither": "slither . --config-file slither.config.json",
+    "clean:all": "pnpm clean && rm -rf node_modules artifacts cache out",
+    "typechain": "hardhat typechain",
+    "prepare": "husky install || true"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.6"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/contracts-upgradeable": "^5.4.0",
+    "@openzeppelin/hardhat-upgrades": "^3.9.1",
+    "axios": "^1.11.0",
+    "cassandra-driver": "^4.8.0",
+    "chai": "^6.2.2",
+    "cors": "^2.8.5",
+    "ethers": "^6.15.0",
+    "express": "^5.1.0",
+    "keccak256": "^1.0.6",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.14.3",
+    "pg": "^8.17.2"
+  }
+}

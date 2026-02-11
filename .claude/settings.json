@@ -1,0 +1,25 @@
+{
+  "project": "sidiora-perpetual-protocol",
+  "language": "solidity",
+  "framework": "hardhat",
+  "chain": {
+    "name": "Paxeer Network",
+    "chainId": 125,
+    "rpc": "https://public-rpc.paxeer.app/rpc"
+  },
+  "conventions": {
+    "solidity_version": "^0.8.27",
+    "indent": 4,
+    "max_line_length": 120,
+    "external_deps": false,
+    "price_decimals": 18,
+    "fee_unit": "basis_points"
+  },
+  "important_files": [
+    "CLAUDE.md",
+    "contracts/diamond/storage/AppStorage.sol",
+    "contracts/diamond/Diamond.sol",
+    "hardhat.config.js",
+    "contracts.yaml"
+  ]
+}

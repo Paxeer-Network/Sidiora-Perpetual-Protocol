@@ -1,0 +1,37 @@
+# Auto-detect text files and normalise line endings
+* text=auto eol=lf
+
+# Solidity
+*.sol linguist-language=Solidity text
+
+# JavaScript / TypeScript
+*.js text
+*.ts text
+*.jsx text
+*.tsx text
+*.json text
+
+# Config
+*.yml text
+*.yaml text
+*.toml text
+*.env text
+
+# Documentation
+*.md text diff=markdown
+LICENSE.md text
+
+# Shell
+*.sh text eol=lf
+
+# Lock files — do not diff
+pnpm-lock.yaml -diff linguist-generated
+package-lock.json -diff linguist-generated
+yarn.lock -diff linguist-generated
+
+# Compiled / binary — treat as binary
+*.wasm binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary

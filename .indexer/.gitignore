@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Subgraph build
+subgraph/build/
+subgraph/generated/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Coverage / logs
+coverage/
+*.log
+logs/
+
+# Secrets (belt and suspenders)
+*.pem
+*.key
+
+# Lock files (regenerated on install)
+# pnpm-lock.yaml

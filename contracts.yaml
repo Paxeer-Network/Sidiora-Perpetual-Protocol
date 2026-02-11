@@ -1,0 +1,168 @@
+# =============================================================================
+# Sidiora Perpetual Protocol — Contract Registry
+# =============================================================================
+# All contracts deployed on Paxeer Network (Chain ID: 125)
+# Diamond proxy address: 0xeA65FE02665852c615774A3041DFE6f00fb77537
+# =============================================================================
+
+network:
+  name: Paxeer Mainnet
+  chain_id: 125
+  rpc: https://public-rpc.paxeer.app/rpc
+  explorer: https://paxscan.paxeer.app
+
+diamond:
+  address: "0xeA65FE02665852c615774A3041DFE6f00fb77537"
+  start_block: 1301600
+
+facets:
+  # ── Diamond Core ───────────────────────────────────────────────
+  DiamondCutFacet:
+    address: "0x8af7E829E2061Cb2353CCce3cf99b00e6ca4DC3B"
+    category: core
+    functions: 1
+    events: 1
+
+  DiamondLoupeFacet:
+    address: "0x425Bcb17F3e3679fC5fE001d3707BDC3ED76c3a1"
+    category: core
+    functions: 5
+    events: 0
+
+  OwnershipFacet:
+    address: "0xDD0C64553e792120B04727b9Eb2e97c8cd67F387"
+    category: core
+    functions: 2
+    events: 1
+
+  AccessControlFacet:
+    address: "0x71E10DB0c468BF682EA744F11C4A29b10E18FDEd"
+    category: core
+    functions: 13
+    events: 3
+
+  PausableFacet:
+    address: "0xDc72b3dC885C5b8816456FcF9EFda7aD5625ABf8"
+    category: core
+    functions: 6
+    events: 4
+
+  # ── Vault & Collateral ─────────────────────────────────────────
+  VaultFactoryFacet:
+    address: "0x54F4D455a8f47dFD2C6f252d0EdEEdDFfEe252B4"
+    category: vault
+    functions: 6
+    events: 2
+
+  CentralVaultFacet:
+    address: "0xd09b87f5790C29fB3D25D642E7E681d722e2Be6A"
+    category: vault
+    functions: 4
+    events: 2
+
+  CollateralFacet:
+    address: "0x26D0BEE6F9249dD3d098288a74f7b026929dD6BD"
+    category: vault
+    functions: 6
+    events: 2
+
+  # ── Trading Engine ─────────────────────────────────────────────
+  PositionFacet:
+    address: "0xD0f2448eF25427cd1555811f73D1d8d2FAbCf74e"
+    category: trading
+    functions: 9
+    events: 3
+
+  OrderBookFacet:
+    address: "0xd2ff3a1684B970750b7FB912b6293C0842554eb4"
+    category: trading
+    functions: 6
+    events: 4
+
+  LiquidationFacet:
+    address: "0xfB1Efb83568635d5fBC1C572F5Cb03FF8fF81982"
+    category: trading
+    functions: 3
+    events: 2
+
+  FundingRateFacet:
+    address: "0x3B13193149142ee25926DfAe5C169D36f8EfDf0c"
+    category: trading
+    functions: 6
+    events: 1
+
+  # ── Pricing Layer ──────────────────────────────────────────────
+  OracleFacet:
+    address: "0x8699dE864496A7Af1F73540262FAA9eD561D7d0F"
+    category: pricing
+    functions: 10
+    events: 6
+
+  VirtualAMMFacet:
+    address: "0x460490264c76d8aE5739F0744e40160582dC7E17"
+    category: pricing
+    functions: 5
+    events: 3
+
+  PriceFeedFacet:
+    address: "0x08E967408a4Ee268FF11ab116BfE1D95F2484c61"
+    category: pricing
+    functions: 6
+    events: 0
+
+  # ── Support ────────────────────────────────────────────────────
+  MarketRegistryFacet:
+    address: "0x2af1c76EC28F437B165594137f28d5A57Af1EEF3"
+    category: support
+    functions: 10
+    events: 5
+
+  InsuranceFundFacet:
+    address: "0x830746A6b7b8989846d4B8848a12326d426Ed562"
+    category: support
+    functions: 5
+    events: 2
+
+  QuoterFacet:
+    address: "0x5b1f999CC865b96a2DA2EF30BFAfe9E60A13083e"
+    category: support
+    functions: 4
+    events: 0
+
+standalone:
+  UserVault:
+    address: "0x4195155D92451a47bF76987315DaEE499f1D7352"
+    description: "EIP-1167 clone template for per-user collateral vaults"
+    functions: 11
+    events: 5
+
+collateral_tokens:
+  USID:
+    address: "0x6C32c255EeBD6A72B56ee82454d7140020919652"
+    decimals: 18
+  USDC:
+    address: "0xf8850b62AE017c55be7f571BBad840b4f3DA7D49"
+    decimals: 6
+  USDT:
+    address: "0x5dfE06Ae465a39c442c45ed273c523BaC2d1f6a8"
+    decimals: 6
+  USDL:
+    address: "0x7c69c84daAEe90B21eeCABDb8f0387897E9B7B37"
+    decimals: 6
+
+markets:
+  - id: 0
+    symbol: BTC
+    name: Bitcoin
+  - id: 1
+    symbol: ETH
+    name: Ethereum
+  - id: 2
+    symbol: SOL
+    name: Solana
+  - id: 3
+    symbol: AVAX
+    name: Avalanche
+  - id: 4
+    symbol: LINK
+    name: Chainlink

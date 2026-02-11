@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Hardhat Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/hardhat",
+      "args": ["test"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "REPORT_GAS": "true"
+      }
+    },
+    {
+      "name": "Hardhat Test (current file)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/hardhat",
+      "args": ["test", "${file}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Deploy All",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/deploy/deploy-all.js",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "HARDHAT_NETWORK": "paxeer-network"
+      }
+    },
+    {
+      "name": "Oracle Node",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/.oracle/index.js",
+      "cwd": "${workspaceFolder}/.oracle",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Indexer",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/.indexer/index.js",
+      "cwd": "${workspaceFolder}/.indexer",
+      "console": "integratedTerminal"
+    }
+  ]
+}

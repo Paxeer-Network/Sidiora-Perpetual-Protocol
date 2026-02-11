@@ -1,0 +1,65 @@
+# Sidiora Perpetual Protocol
+
+> Synthetic perpetual futures protocol on Paxeer Network (EVM, chain ID 125). EIP-2535 Diamond with 19 facets, zero external Solidity dependencies.
+
+## Overview
+
+Sidiora lets traders open leveraged long/short positions (up to 1000x) on crypto, RWA, stocks, and indexes. Collateral is multi-stablecoin. A central vault acts as counterparty. Pricing combines a custom oracle, virtual AMM, and TWAP.
+
+## Architecture
+
+- Single Diamond proxy: 0xeA65FE02665852c615774A3041DFE6f00fb77537
+- 19 facets organized into 5 groups (core, vault, trading, pricing, support)
+- Per-user vault clones (EIP-1167 + CREATE2)
+- Protocol-funded central vault (no external LPs)
+- Net mode: one direction per market per user
+- Per-second continuous funding accrual
+- Network owner is sole admin (no multi-sig, no timelock)
+
+## Documentation
+
+- [Architecture](docs/architecture.md): Diamond pattern, storage layout, vault model
+- [Contract Reference](docs/contracts.md): 118 functions, 48 events across 20 contracts
+- [Trading Guide](docs/trading-guide.md): Positions, orders, liquidations, funding
+- [Oracle System](docs/oracle.md): Pyth integration, vAMM, TWAP, staleness
+- [GraphQL API](docs/indexer-api.md): Event indexer with 22 queries
+- [SDK Reference](docs/sdk-reference.md): TypeScript SDK with actions, hooks, types
+- [Deployment](docs/deployment.md): Addresses, verification, upgrade process
+
+## Key Files
+
+- contracts/diamond/facets/ -- All 19 facets
+- contracts/diamond/libraries/ -- 10 internal libraries
+- contracts/diamond/storage/AppStorage.sol -- Shared state definition
+- contracts/vaults/UserVault.sol -- Per-user vault template
+- .oracle/ -- Off-chain oracle node (Pyth -> chain)
+- .indexer/ -- Event indexer (PostgreSQL + GraphQL)
+- sdk/ -- TypeScript SDK (@paxeer-network/sidiora-perpetuals)
+- scripts/deploy/ -- Deployment scripts (01 through 07)
+
+## Markets
+
+| ID | Symbol | Asset |
+|----|--------|-------|
+| 0 | BTC | Bitcoin |
+| 1 | ETH | Ethereum |
+| 2 | SOL | Solana |
+| 3 | AVAX | Avalanche |
+| 4 | LINK | Chainlink |
+
+## Collateral
+
+| Token | Address | Decimals |
+|-------|---------|----------|
+| USID | 0x6C32c255EeBD6A72B56ee82454d7140020919652 | 18 |
+| USDC | 0xf8850b62AE017c55be7f571BBad840b4f3DA7D49 | 6 |
+| USDT | 0x5dfE06Ae465a39c442c45ed273c523BaC2d1f6a8 | 6 |
+| USDL | 0x7c69c84daAEe90B21eeCABDb8f0387897E9B7B37 | 6 |
+
+## Conventions
+
+- Prices: 18-decimal fixed-point USD (97250e18 = $97,250)
+- Leverage: 18-decimal fixed-point (10e18 = 10x)
+- Fees: basis points (100 bps = 1%)
+- Market IDs: sequential uint256 from 0
+- Position IDs: sequential uint256 from 1

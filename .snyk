@@ -1,0 +1,8 @@
+# Snyk policy file
+# https://snyk.io/docs/snyk-config-file/
+version: v1.25.0
+language-settings:
+  javascript:
+    target-severity: high
+ignore: {}
+patch: {}

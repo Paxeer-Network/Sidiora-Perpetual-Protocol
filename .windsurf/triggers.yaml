@@ -1,0 +1,453 @@
+# Windsurf AI Agent - Auto-Trigger Configuration
+# Blockchain-focused trigger rules
+
+version: "1.0.0"
+
+# =============================================================================
+# PATTERN-BASED TRIGGERS (User Input)
+# =============================================================================
+
+pattern_triggers:
+
+  # Smart Contract Development
+  - name: smart-contract-work
+    description: "Triggered when user wants to write smart contracts"
+    patterns:
+      - "write contract"
+      - "create contract"
+      - "smart contract"
+      - "solidity"
+      - "implement contract"
+      - "deploy contract"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - solidity-security
+        - web3-testing
+        - test-driven-development
+    priority: high
+
+  # DeFi Protocol Development
+  - name: defi-development
+    description: "Triggered for DeFi protocol work"
+    patterns:
+      - "defi"
+      - "amm"
+      - "automated market maker"
+      - "liquidity pool"
+      - "staking"
+      - "yield farm"
+      - "lending protocol"
+      - "flash loan"
+      - "governance token"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - defi-protocol-templates
+        - solidity-security
+        - web3-testing
+      optional:
+        - quant-analyst
+        - risk-manager
+    priority: high
+
+  # NFT Development
+  - name: nft-development
+    description: "Triggered for NFT-related work"
+    patterns:
+      - "nft"
+      - "erc721"
+      - "erc1155"
+      - "collection"
+      - "mint"
+      - "metadata"
+      - "royalty"
+      - "soulbound"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - nft-standards
+        - solidity-security
+        - web3-testing
+    priority: high
+
+  # Security & Auditing
+  - name: security-audit
+    description: "Triggered for security review work"
+    patterns:
+      - "audit"
+      - "security review"
+      - "vulnerability"
+      - "exploit"
+      - "reentrancy"
+      - "slither"
+      - "mythril"
+      - "security check"
+    action:
+      type: load_skills
+      skills:
+        - solidity-security
+        - security-audit
+        - pr-review
+        - defense-in-depth
+    priority: critical
+
+  # Testing
+  - name: contract-testing
+    description: "Triggered for smart contract testing"
+    patterns:
+      - "test contract"
+      - "write tests"
+      - "hardhat test"
+      - "forge test"
+      - "foundry"
+      - "coverage"
+      - "fuzz"
+    action:
+      type: load_skills
+      skills:
+        - web3-testing
+        - test-driven-development
+        - systematic-debugging
+    priority: high
+
+  # Debugging
+  - name: debugging-session
+    description: "Triggered when debugging issues"
+    patterns:
+      - "bug"
+      - "fix"
+      - "debug"
+      - "error"
+      - "failing"
+      - "broken"
+      - "not working"
+      - "revert"
+    action:
+      type: load_skills
+      skills:
+        - systematic-debugging
+        - defense-in-depth
+        - web3-testing
+    priority: high
+
+  # Design & Planning
+  - name: design-phase
+    description: "Triggered for design and planning work"
+    patterns:
+      - "design"
+      - "architect"
+      - "plan"
+      - "how should"
+      - "best approach"
+      - "structure"
+    action:
+      type: load_skills
+      skills:
+        - brainstorming
+        - architecture
+      next_phase:
+        - writing-plans
+    priority: medium
+
+  # Research
+  - name: research-task
+    description: "Triggered for research tasks"
+    patterns:
+      - "research"
+      - "investigate"
+      - "compare"
+      - "what is"
+      - "how does"
+      - "best practice"
+    action:
+      type: load_skills
+      skills:
+        - deep-researcher
+    priority: medium
+
+  # Code Review
+  - name: code-review
+    description: "Triggered for PR/code review"
+    patterns:
+      - "review"
+      - "pr review"
+      - "pull request"
+      - "check this"
+      - "look at this code"
+    action:
+      type: load_skills
+      skills:
+        - pr-review
+        - security-audit
+        - code-quality
+    priority: high
+
+  # Gas Optimization
+  - name: gas-optimization
+    description: "Triggered for gas optimization work"
+    patterns:
+      - "gas"
+      - "optimize"
+      - "cheaper"
+      - "reduce cost"
+      - "gas efficient"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - solidity-security
+    context:
+      focus: gas_optimization
+    priority: medium
+
+# =============================================================================
+# EVENT-BASED TRIGGERS (File System / IDE)
+# =============================================================================
+
+event_triggers:
+
+  # New Solidity file created
+  - name: new-solidity-file
+    event: file_created
+    conditions:
+      - path_matches: "**/*.sol"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - solidity-security
+      suggestions:
+        - "Consider using OpenZeppelin contracts"
+        - "Remember to add NatSpec comments"
+        - "Plan your test file structure"
+
+  # Test file created
+  - name: new-test-file
+    event: file_created
+    conditions:
+      - path_matches: "**/*.test.{js,ts}"
+      - path_matches: "**/test/**/*.{js,ts}"
+      - path_matches: "**/*.t.sol"
+    action:
+      type: load_skills
+      skills:
+        - web3-testing
+        - test-driven-development
+
+  # Config file modified
+  - name: config-modified
+    event: file_saved
+    conditions:
+      - path_matches: "**/hardhat.config.{js,ts}"
+      - path_matches: "**/foundry.toml"
+      - path_matches: "**/truffle-config.js"
+    action:
+      type: validate_config
+      skills:
+        - blockchain-developer
+
+  # Package.json modified
+  - name: dependencies-changed
+    event: file_saved
+    conditions:
+      - path_matches: "**/package.json"
+    action:
+      type: security_check
+      skills:
+        - security-audit
+      run:
+        - "Check for known vulnerabilities"
+        - "Verify lockfile consistency"
+
+  # Contract saved - run checks
+  - name: contract-saved
+    event: file_saved
+    conditions:
+      - path_matches: "**/*.sol"
+      - not_path: "**/node_modules/**"
+    action:
+      type: validate
+      run:
+        - compile_check
+        - lint_check
+      suggestions:
+        - "Run tests for this contract"
+        - "Check gas usage"
+
+# =============================================================================
+# CONTEXT-BASED TRIGGERS
+# =============================================================================
+
+context_triggers:
+
+  # Large codebase optimization
+  - name: large-codebase
+    condition:
+      file_count: "> 100"
+      session_start: true
+    action:
+      type: background
+      run:
+        skill: architecture
+        task: build_project_index
+    priority: background
+
+  # First time in project
+  - name: new-project-context
+    condition:
+      no_prior_sessions: true
+    action:
+      type: analyze
+      run:
+        - scan_project_structure
+        - identify_frameworks
+        - load_conventions
+      skills:
+        - architecture
+
+  # Blockchain project detected
+  - name: blockchain-project-detected
+    condition:
+      files_exist:
+        - "hardhat.config.js"
+        - "hardhat.config.ts"
+        - "foundry.toml"
+        - "truffle-config.js"
+    action:
+      type: load_skills
+      skills:
+        - blockchain-developer
+        - solidity-security
+      context:
+        project_type: blockchain
+
+# =============================================================================
+# SCHEDULE-BASED TRIGGERS
+# =============================================================================
+
+schedule_triggers:
+
+  # Session summary on idle
+  - name: session-summary
+    schedule:
+      on_idle: 300  # 5 minutes of inactivity
+    action:
+      type: generate
+      output: session_summary
+      save_to: session_state
+
+  # Checkpoint workflow state
+  - name: workflow-checkpoint
+    schedule:
+      interval: 300  # Every 5 minutes
+    condition:
+      active_workflow: true
+    action:
+      type: checkpoint
+      save_to: workflow_state
+
+  # Context cleanup
+  - name: context-cleanup
+    schedule:
+      on_idle: 600  # 10 minutes
+    action:
+      type: cleanup
+      run:
+        - compress_old_context
+        - evict_low_priority
+
+# =============================================================================
+# COMPOUND TRIGGERS (Multiple Conditions)
+# =============================================================================
+
+compound_triggers:
+
+  # Pre-deployment checklist
+  - name: pre-deployment
+    conditions:
+      all:
+        - pattern_matches: ["deploy", "mainnet", "production"]
+        - project_type: blockchain
+    action:
+      type: checklist
+      require:
+        - all_tests_pass
+        - coverage_above_90
+        - slither_clean
+        - audit_complete
+      skills:
+        - blockchain-developer
+        - security-audit
+      guardrails:
+        - require_confirmation
+        - log_decision
+
+  # Critical security issue
+  - name: security-alert
+    conditions:
+      any:
+        - pattern_matches: ["hack", "exploit", "stolen", "drained"]
+        - vulnerability_detected: true
+    action:
+      type: alert
+      priority: critical
+      skills:
+        - solidity-security
+        - systematic-debugging
+        - defense-in-depth
+      mode: investigation
+
+# =============================================================================
+# WORKFLOW TRIGGERS
+# =============================================================================
+
+workflow_triggers:
+
+  # Start smart contract workflow
+  - name: start-contract-workflow
+    patterns:
+      - "build a contract"
+      - "create new contract"
+      - "implement contract for"
+    action:
+      type: workflow
+      workflow: smart-contract-development
+      skills:
+        - blockchain-developer
+        - solidity-security
+        - web3-testing
+        - test-driven-development
+
+  # Start DeFi workflow
+  - name: start-defi-workflow
+    patterns:
+      - "build defi"
+      - "create protocol"
+      - "implement amm"
+      - "build staking"
+    action:
+      type: workflow
+      workflow: defi-protocol-development
+      skills:
+        - blockchain-developer
+        - defi-protocol-templates
+        - solidity-security
+        - web3-testing
+
+  # Start audit workflow
+  - name: start-audit-workflow
+    patterns:
+      - "audit this"
+      - "security review"
+      - "check for vulnerabilities"
+    action:
+      type: workflow
+      workflow: security-audit
+      skills:
+        - security-audit
+        - solidity-security
+        - pr-review

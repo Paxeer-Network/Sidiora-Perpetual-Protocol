@@ -1,0 +1,39 @@
+name: Gas Report
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "contracts/**"
+      - "tests/**"
+
+jobs:
+  gas:
+    name: Gas Usage Report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with gas reporting
+        run: npx hardhat test
+        env:
+          REPORT_GAS: true
+
+      - name: Compare gas usage
+        uses: Rubilmax/foundry-gas-diff@v3.18
+        with:
+          summaryQuantile: 0.9
+        continue-on-error: true

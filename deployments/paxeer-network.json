@@ -1,0 +1,374 @@
+{
+  "network": "paxeer-network",
+  "diamondAddress": "0xeA65FE02665852c615774A3041DFE6f00fb77537",
+  "facets": {
+    "DiamondCutFacet": {
+      "address": "0x8af7E829E2061Cb2353CCce3cf99b00e6ca4DC3B",
+      "selectors": [
+        "0x1f931c1c"
+      ],
+      "deployedAt": "2026-02-11T17:41:12.010Z"
+    },
+    "DiamondLoupeFacet": {
+      "address": "0x425Bcb17F3e3679fC5fE001d3707BDC3ED76c3a1",
+      "selectors": [
+        "0xcdffacc6",
+        "0x52ef6b2c",
+        "0xadfca15e",
+        "0x7a0ed627",
+        "0x01ffc9a7"
+      ],
+      "deployedAt": "2026-02-11T17:41:19.728Z"
+    },
+    "OwnershipFacet": {
+      "address": "0xDD0C64553e792120B04727b9Eb2e97c8cd67F387",
+      "selectors": [
+        "0x8da5cb5b",
+        "0xf2fde38b"
+      ],
+      "deployedAt": "2026-02-11T17:41:19.728Z"
+    },
+    "PositionFacet": {
+      "address": "0xD0f2448eF25427cd1555811f73D1d8d2FAbCf74e",
+      "selectors": [
+        "0xa8f35adf",
+        "0x8347a72f",
+        "0xa126d601",
+        "0x1b3ee0f1",
+        "0xeb02c301",
+        "0x5c58777e",
+        "0xeddf7570",
+        "0x6d055f06",
+        "0xeaa6185c"
+      ],
+      "deployedAt": "2026-02-11T17:41:25.360Z"
+    },
+    "OrderBookFacet": {
+      "address": "0xd2ff3a1684B970750b7FB912b6293C0842554eb4",
+      "selectors": [
+        "0x514fcac7",
+        "0x94f61134",
+        "0xd09ef241",
+        "0xec641a1d",
+        "0x569e792e",
+        "0xa1d442c7"
+      ],
+      "deployedAt": "2026-02-11T17:41:28.288Z"
+    },
+    "LiquidationFacet": {
+      "address": "0xfB1Efb83568635d5fBC1C572F5Cb03FF8fF81982",
+      "selectors": [
+        "0x0a4842f8",
+        "0x3e129715",
+        "0x415f1240"
+      ],
+      "deployedAt": "2026-02-11T17:41:31.043Z"
+    },
+    "FundingRateFacet": {
+      "address": "0x3B13193149142ee25926DfAe5C169D36f8EfDf0c",
+      "selectors": [
+        "0x8c1b753a",
+        "0x40f04812",
+        "0xb4acb042",
+        "0x2cda90b2",
+        "0xed08f9dc",
+        "0x894feb9d"
+      ],
+      "deployedAt": "2026-02-11T17:41:33.704Z"
+    },
+    "OracleFacet": {
+      "address": "0x8699dE864496A7Af1F73540262FAA9eD561D7d0F",
+      "selectors": [
+        "0x7ffbc7a8",
+        "0x8fd652c3",
+        "0x5b67c98d",
+        "0xe7572230",
+        "0x980d7d37",
+        "0x13c121bd",
+        "0x044e984f",
+        "0xdb4e3ec8",
+        "0x89bc4623",
+        "0x65b2d327"
+      ],
+      "deployedAt": "2026-02-11T17:41:39.010Z"
+    },
+    "VirtualAMMFacet": {
+      "address": "0x460490264c76d8aE5739F0744e40160582dC7E17",
+      "selectors": [
+        "0x5af3d061",
+        "0x068bcd8d",
+        "0xe496230a",
+        "0x37fb2ee0",
+        "0xa81b1979"
+      ],
+      "deployedAt": "2026-02-11T17:41:41.626Z"
+    },
+    "PriceFeedFacet": {
+      "address": "0x08E967408a4Ee268FF11ab116BfE1D95F2484c61",
+      "selectors": [
+        "0x2996c19d",
+        "0x12080647",
+        "0x2c854f23",
+        "0x955e7af1",
+        "0x06586913"
+      ],
+      "deployedAt": "2026-02-11T17:41:44.249Z"
+    },
+    "AccessControlFacet": {
+      "address": "0x71E10DB0c468BF682EA744F11C4A29b10E18FDEd",
+      "selectors": [
+        "0xee4c2bff",
+        "0x741fe126",
+        "0x364bc15a",
+        "0xd6f0d39f",
+        "0x6b133ea2",
+        "0xe63ab1e9",
+        "0x67cde192",
+        "0x248a9ca3",
+        "0x2f2ff15d",
+        "0x91d14854",
+        "0x8bb9c5bf",
+        "0xd547741f",
+        "0x1e4e0091"
+      ],
+      "deployedAt": "2026-02-11T17:41:49.541Z"
+    },
+    "PausableFacet": {
+      "address": "0xDc72b3dC885C5b8816456FcF9EFda7aD5625ABf8",
+      "selectors": [
+        "0xb714fa3e",
+        "0x183db695",
+        "0x98e9a952",
+        "0xfc12524c",
+        "0x154ae6b6",
+        "0x87784844"
+      ],
+      "deployedAt": "2026-02-11T17:41:52.740Z"
+    },
+    "VaultFactoryFacet": {
+      "address": "0x54F4D455a8f47dFD2C6f252d0EdEEdDFfEe252B4",
+      "selectors": [
+        "0x5d12928b",
+        "0x8d3a76bb",
+        "0x0eb9af38",
+        "0x29eb7e17",
+        "0xd784d426",
+        "0x8d654023"
+      ],
+      "deployedAt": "2026-02-11T17:41:55.396Z"
+    },
+    "CentralVaultFacet": {
+      "address": "0xd09b87f5790C29fB3D25D642E7E681d722e2Be6A",
+      "selectors": [
+        "0xd8f8deb8",
+        "0xa5e0759a",
+        "0xfdce8643",
+        "0xd3d7c002"
+      ],
+      "deployedAt": "2026-02-11T17:41:58.021Z"
+    },
+    "CollateralFacet": {
+      "address": "0x26D0BEE6F9249dD3d098288a74f7b026929dD6BD",
+      "selectors": [
+        "0xf0d2d5a8",
+        "0xeb7aac5f",
+        "0xb58eb63f",
+        "0x2b037c57",
+        "0xd979b720",
+        "0xc99d3a06"
+      ],
+      "deployedAt": "2026-02-11T17:42:00.654Z"
+    },
+    "MarketRegistryFacet": {
+      "address": "0x2af1c76EC28F437B165594137f28d5A57Af1EEF3",
+      "selectors": [
+        "0x9bd1d513",
+        "0x565c1714",
+        "0x96a44225",
+        "0xbd243ff3",
+        "0xdb8d55f1",
+        "0xeb44fdd3",
+        "0xf849f69e",
+        "0x6fcba377",
+        "0x8162486b",
+        "0xfcb8ee95"
+      ],
+      "deployedAt": "2026-02-11T17:42:03.328Z"
+    },
+    "InsuranceFundFacet": {
+      "address": "0x830746A6b7b8989846d4B8848a12326d426Ed562",
+      "selectors": [
+        "0x9f30c09e",
+        "0x637b93ed",
+        "0xffa8faed",
+        "0x241161ff",
+        "0xa2c97f69"
+      ],
+      "deployedAt": "2026-02-11T17:42:06.000Z"
+    },
+    "QuoterFacet": {
+      "address": "0x5b1f999CC865b96a2DA2EF30BFAfe9E60A13083e",
+      "selectors": [
+        "0x0c849b70",
+        "0x3dc355fe",
+        "0xa7b85d21",
+        "0xff05d3bc"
+      ],
+      "deployedAt": "2026-02-11T17:42:08.673Z"
+    }
+  },
+  "contracts": {
+    "UserVaultImplementation": {
+      "address": "0x4195155D92451a47bF76987315DaEE499f1D7352",
+      "deployedAt": "2026-02-11T17:42:14.087Z"
+    }
+  },
+  "timestamp": "2026-02-11T18:02:56.237Z",
+  "initialized": {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AVAX",
+      "LINK"
+    ],
+    "fees": {
+      "taker": 10,
+      "maker": 5,
+      "liquidation": 500,
+      "insurance": 2000
+    },
+    "oracleStaleness": 120,
+    "timestamp": "2026-02-11T17:42:52.291Z"
+  },
+  "verification": {
+    "results": [
+      {
+        "name": "DiamondCutFacet",
+        "address": "0x8af7E829E2061Cb2353CCce3cf99b00e6ca4DC3B",
+        "status": "verified"
+      },
+      {
+        "name": "Diamond",
+        "address": "0xeA65FE02665852c615774A3041DFE6f00fb77537",
+        "status": "verified"
+      },
+      {
+        "name": "DiamondLoupeFacet",
+        "address": "0x425Bcb17F3e3679fC5fE001d3707BDC3ED76c3a1",
+        "status": "verified"
+      },
+      {
+        "name": "OwnershipFacet",
+        "address": "0xDD0C64553e792120B04727b9Eb2e97c8cd67F387",
+        "status": "verified"
+      },
+      {
+        "name": "PositionFacet",
+        "address": "0xD0f2448eF25427cd1555811f73D1d8d2FAbCf74e",
+        "status": "verified"
+      },
+      {
+        "name": "OrderBookFacet",
+        "address": "0xd2ff3a1684B970750b7FB912b6293C0842554eb4",
+        "status": "verified"
+      },
+      {
+        "name": "LiquidationFacet",
+        "address": "0xfB1Efb83568635d5fBC1C572F5Cb03FF8fF81982",
+        "status": "verified"
+      },
+      {
+        "name": "FundingRateFacet",
+        "address": "0x3B13193149142ee25926DfAe5C169D36f8EfDf0c",
+        "status": "verified"
+      },
+      {
+        "name": "OracleFacet",
+        "address": "0x8699dE864496A7Af1F73540262FAA9eD561D7d0F",
+        "status": "verified"
+      },
+      {
+        "name": "VirtualAMMFacet",
+        "address": "0x460490264c76d8aE5739F0744e40160582dC7E17",
+        "status": "verified"
+      },
+      {
+        "name": "PriceFeedFacet",
+        "address": "0x08E967408a4Ee268FF11ab116BfE1D95F2484c61",
+        "status": "verified"
+      },
+      {
+        "name": "AccessControlFacet",
+        "address": "0x71E10DB0c468BF682EA744F11C4A29b10E18FDEd",
+        "status": "verified"
+      },
+      {
+        "name": "PausableFacet",
+        "address": "0xDc72b3dC885C5b8816456FcF9EFda7aD5625ABf8",
+        "status": "verified"
+      },
+      {
+        "name": "VaultFactoryFacet",
+        "address": "0x54F4D455a8f47dFD2C6f252d0EdEEdDFfEe252B4",
+        "status": "verified"
+      },
+      {
+        "name": "CentralVaultFacet",
+        "address": "0xd09b87f5790C29fB3D25D642E7E681d722e2Be6A",
+        "status": "verified"
+      },
+      {
+        "name": "CollateralFacet",
+        "address": "0x26D0BEE6F9249dD3d098288a74f7b026929dD6BD",
+        "status": "verified"
+      },
+      {
+        "name": "MarketRegistryFacet",
+        "address": "0x2af1c76EC28F437B165594137f28d5A57Af1EEF3",
+        "status": "verified"
+      },
+      {
+        "name": "InsuranceFundFacet",
+        "address": "0x830746A6b7b8989846d4B8848a12326d426Ed562",
+        "status": "verified"
+      },
+      {
+        "name": "QuoterFacet",
+        "address": "0x5b1f999CC865b96a2DA2EF30BFAfe9E60A13083e",
+        "status": "verified"
+      },
+      {
+        "name": "UserVault",
+        "address": "0x4195155D92451a47bF76987315DaEE499f1D7352",
+        "status": "verified"
+      }
+    ],
+    "timestamp": "2026-02-11T17:48:51.544Z",
+    "verified": 20,
+    "alreadyVerified": 0,
+    "failed": 0
+  },
+  "collateral": [
+    {
+      "symbol": "USID",
+      "address": "0x6C32c255EeBD6A72B56ee82454d7140020919652",
+      "decimals": 18
+    },
+    {
+      "symbol": "USDC",
+      "address": "0xf8850b62AE017c55be7f571BBad840b4f3DA7D49",
+      "decimals": 6
+    },
+    {
+      "symbol": "USDT",
+      "address": "0x5dfE06Ae465a39c442c45ed273c523BaC2d1f6a8",
+      "decimals": 6
+    },
+    {
+      "symbol": "USDL",
+      "address": "0x7c69c84daAEe90B21eeCABDb8f0387897E9B7B37",
+      "decimals": 6
+    }
+  ]
+}

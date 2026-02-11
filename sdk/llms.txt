@@ -1,0 +1,384 @@
+# @paxeer-network/sidiora-perpetuals
+
+> TypeScript SDK for the Sidora Perpetual Product Market Maker smart contracts on Paxeer (chainId 125)
+
+This is a TypeScript SDK for interacting with EVM smart contracts.
+It provides typed ABIs, React/Wagmi hooks, non-React actions, contract constants,
+and a Graph Protocol subgraph for indexing.
+
+## Tech Stack
+- TypeScript 5.3+
+- wagmi v2 (React hooks)
+- viem v2 (low-level Ethereum interface)
+- Graph Protocol (subgraph indexing)
+
+## Networks
+  - Paxeer Mainnet (chainId: 125, rpc: https://mainnet-beta.rpc.hyperpaxeer.com/rpc)
+
+## Contracts
+
+  ## Diamond
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    (none)
+
+  ### Write Functions
+    (none)
+
+  ### Events
+    - DiamondCut(_diamondCut: tuple[], _init: address, _calldata: bytes)
+    - OwnershipTransferred(indexed previousOwner: address, indexed newOwner: address)
+
+  ## DiamondCutFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    (none)
+
+  ### Write Functions
+    - diamondCut(_diamondCut: tuple[], _init: address, _calldata: bytes)
+
+  ### Events
+    - DiamondCut(_diamondCut: tuple[], _init: address, _calldata: bytes)
+    - DiamondCut(_diamondCut: tuple[], _init: address, _calldata: bytes)
+
+  ## DiamondLoupeFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - facetAddress(_functionSelector: bytes4)
+    - facetAddresses()
+    - facetFunctionSelectors(_facet: address)
+    - facets()
+    - supportsInterface(_interfaceId: bytes4)
+
+  ### Write Functions
+    (none)
+
+  ### Events
+    (none)
+
+  ## OwnershipFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - owner()
+
+  ### Write Functions
+    - transferOwnership(_newOwner: address)
+
+  ### Events
+    - OwnershipTransferred(indexed previousOwner: address, indexed newOwner: address)
+    - OwnershipTransferred(indexed previousOwner: address, indexed newOwner: address)
+
+  ## PositionFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getOpenInterest(_marketId: uint256)
+    - getPosition(_positionId: uint256)
+    - getUserMarketPosition(_user: address, _marketId: uint256)
+    - getUserPositionIds(_user: address)
+
+  ### Write Functions
+    - addCollateral(_positionId: uint256, _amount: uint256)
+    - addSize(_positionId: uint256, _additionalCollateral: uint256, _leverage: uint256)
+    - closePosition(_positionId: uint256)
+    - openPosition(_marketId: uint256, _collateralToken: address, _collateralAmount: uint256, _leverage: uint256, _isLong: bool)
+    - partialClose(_positionId: uint256, _closeSizeUsd: uint256)
+
+  ### Events
+    - PositionClosed(indexed positionId: uint256, indexed user: address, indexed marketId: uint256, closedSizeUsd: uint256, exitPrice: uint256, realizedPnl: int256, isFullClose: bool)
+    - PositionModified(indexed positionId: uint256, newSizeUsd: uint256, newCollateralUsd: uint256, newCollateralAmount: uint256)
+    - PositionOpened(indexed positionId: uint256, indexed user: address, indexed marketId: uint256, isLong: bool, sizeUsd: uint256, leverage: uint256, entryPrice: uint256, collateralToken: address, collateralAmount: uint256)
+
+  ## OrderBookFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getOrder(_orderId: uint256)
+    - getUserOrderIds(_user: address)
+
+  ### Write Functions
+    - cancelOrder(_orderId: uint256)
+    - executeOrder(_orderId: uint256)
+    - placeLimitOrder(_marketId: uint256, _isLong: bool, _triggerPrice: uint256, _sizeUsd: uint256, _leverage: uint256, _collateralToken: address, _collateralAmount: uint256)
+    - placeStopLimitOrder(_marketId: uint256, _isLong: bool, _triggerPrice: uint256, _limitPrice: uint256, _sizeUsd: uint256, _leverage: uint256, _collateralToken: address, _collateralAmount: uint256)
+
+  ### Events
+    - OrderCancelled(indexed orderId: uint256, indexed user: address)
+    - OrderExecuted(indexed orderId: uint256, indexed positionId: uint256, executionPrice: uint256)
+    - OrderPlaced(indexed orderId: uint256, indexed user: address, indexed marketId: uint256, orderType: uint8, isLong: bool, triggerPrice: uint256, sizeUsd: uint256)
+    - PositionOpened(indexed positionId: uint256, indexed user: address, indexed marketId: uint256, isLong: bool, sizeUsd: uint256, leverage: uint256, entryPrice: uint256, collateralToken: address, collateralAmount: uint256)
+
+  ## LiquidationFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - checkLiquidatable(_positionId: uint256)
+
+  ### Write Functions
+    - autoDeleverage(_positionId: uint256, _deleverageSize: uint256)
+    - liquidate(_positionId: uint256)
+
+  ### Events
+    - ADLExecuted(indexed positionId: uint256, deleveragedSizeUsd: uint256)
+    - Liquidation(indexed positionId: uint256, indexed user: address, indexed marketId: uint256, liquidationPrice: uint256, penalty: uint256, keeper: address)
+
+  ## FundingRateFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getCurrentFundingRate(_marketId: uint256)
+    - getFundingRate24h(_marketId: uint256)
+    - getFundingState(_marketId: uint256)
+    - getPendingFunding(_marketId: uint256)
+    - getPositionFunding(_positionId: uint256)
+
+  ### Write Functions
+    - updateFundingRate(_marketId: uint256)
+
+  ### Events
+    - FundingRateUpdated(indexed marketId: uint256, newRatePerSecond: int256, fundingRate24h: int256)
+
+  ## OracleFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getMaxPriceStaleness()
+    - getPrice(_marketId: uint256)
+    - getPriceHistoryLength(_marketId: uint256)
+    - getPricePoint(_marketId: uint256, _index: uint256)
+    - isAuthorizedPoster(_poster: address)
+    - isPriceStale(_marketId: uint256)
+
+  ### Write Functions
+    - addPricePoster(_poster: address)
+    - batchUpdatePrices(_marketIds: uint256[], _prices: uint256[])
+    - removePricePoster(_poster: address)
+    - setMaxPriceStaleness(_maxStaleness: uint256)
+
+  ### Events
+    - MaxPriceStalenessUpdated(oldValue: uint256, newValue: uint256)
+    - PricePosterAdded(indexed poster: address)
+    - PricePosterRemoved(indexed poster: address)
+    - PricesUpdated(marketIds: uint256[], prices: uint256[], timestamp: uint256)
+    - RoleGranted(indexed role: bytes32, indexed account: address, indexed sender: address)
+    - RoleRevoked(indexed role: bytes32, indexed account: address, indexed sender: address)
+
+  ## VirtualAMMFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getMarkPrice(_marketId: uint256)
+    - getPool(_marketId: uint256)
+    - simulateImpact(_marketId: uint256, _sizeUsd: uint256, _isLong: bool)
+
+  ### Write Functions
+    - initializePool(_marketId: uint256, _initialPrice: uint256, _virtualLiquidity: uint256, _dampingFactor: uint256)
+    - syncToOracle(_marketId: uint256)
+
+  ### Events
+    - PoolInitialized(indexed marketId: uint256, baseReserve: uint256, quoteReserve: uint256)
+    - PoolReservesUpdated(indexed marketId: uint256, newBase: uint256, newQuote: uint256)
+    - PoolSynced(indexed marketId: uint256, newBase: uint256, newQuote: uint256, oraclePrice: uint256)
+
+  ## PriceFeedFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getExecutionPrice(_marketId: uint256, _sizeUsd: uint256, _isLong: bool)
+    - getIndexPrice(_marketId: uint256)
+    - getLiquidationPrice(_marketId: uint256)
+    - getMarkPrice(_marketId: uint256)
+    - getOracleTWAP(_marketId: uint256)
+    - getOracleTWAPCustom(_marketId: uint256, _windowSeconds: uint256)
+
+  ### Write Functions
+    (none)
+
+  ### Events
+    (none)
+
+  ## AccessControlFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - DIAMOND_OWNER_ROLE()
+    - INSURANCE_ADMIN_ROLE()
+    - KEEPER_ROLE()
+    - MARKET_ADMIN_ROLE()
+    - ORACLE_POSTER_ROLE()
+    - PAUSER_ROLE()
+    - PROTOCOL_FUNDER_ROLE()
+    - getRoleAdmin(_role: bytes32)
+    - hasRole(_role: bytes32, _account: address)
+
+  ### Write Functions
+    - grantRole(_role: bytes32, _account: address)
+    - renounceRole(_role: bytes32)
+    - revokeRole(_role: bytes32, _account: address)
+    - setRoleAdmin(_role: bytes32, _adminRole: bytes32)
+
+  ### Events
+    - RoleAdminChanged(indexed role: bytes32, indexed previousAdminRole: bytes32, indexed newAdminRole: bytes32)
+    - RoleGranted(indexed role: bytes32, indexed account: address, indexed sender: address)
+    - RoleRevoked(indexed role: bytes32, indexed account: address, indexed sender: address)
+
+  ## PausableFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - isGlobalPaused()
+    - isMarketPaused(_marketId: uint256)
+
+  ### Write Functions
+    - pauseGlobal()
+    - pauseMarket(_marketId: uint256)
+    - unpauseGlobal()
+    - unpauseMarket(_marketId: uint256)
+
+  ### Events
+    - GlobalPaused(indexed by: address)
+    - GlobalUnpaused(indexed by: address)
+    - MarketPaused(indexed marketId: uint256, indexed by: address)
+    - MarketUnpaused(indexed marketId: uint256, indexed by: address)
+
+  ## MarketRegistryFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getActiveMarketIds()
+    - getFees()
+    - getMarket(_marketId: uint256)
+    - isMarketActive(_marketId: uint256)
+    - totalMarkets()
+
+  ### Write Functions
+    - createMarket(_name: string, _symbol: string, _maxLeverage: uint256, _maintenanceMarginBps: uint256, _maxOpenInterest: uint256)
+    - disableMarket(_marketId: uint256)
+    - enableMarket(_marketId: uint256)
+    - setFees(_takerFeeBps: uint256, _makerFeeBps: uint256, _liquidationFeeBps: uint256, _insuranceFeeBps: uint256)
+    - updateMarket(_marketId: uint256, _maxLeverage: uint256, _maintenanceMarginBps: uint256, _maxOpenInterest: uint256)
+
+  ### Events
+    - FeesUpdated(takerFeeBps: uint256, makerFeeBps: uint256, liquidationFeeBps: uint256, insuranceFeeBps: uint256)
+    - MarketCreated(indexed marketId: uint256, name: string, symbol: string, maxLeverage: uint256)
+    - MarketDisabled(indexed marketId: uint256)
+    - MarketEnabled(indexed marketId: uint256)
+    - MarketUpdated(indexed marketId: uint256)
+
+  ## InsuranceFundFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getADLThreshold()
+    - getInsuranceBalance(_token: address)
+    - shouldTriggerADL(_token: address)
+
+  ### Write Functions
+    - setADLThreshold(_threshold: uint256)
+    - withdrawInsurance(_token: address, _amount: uint256, _to: address)
+
+  ### Events
+    - ADLThresholdUpdated(oldThreshold: uint256, newThreshold: uint256)
+    - InsuranceWithdrawn(indexed token: address, amount: uint256, indexed to: address)
+
+  ## QuoterFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - quoteClosePosition(_positionId: uint256)
+    - quoteMarket(_marketId: uint256)
+    - quoteOpenPosition(_marketId: uint256, _collateralToken: address, _collateralAmount: uint256, _leverage: uint256, _isLong: bool)
+    - quotePartialClose(_positionId: uint256, _closeSizeUsd: uint256)
+
+  ### Write Functions
+    (none)
+
+  ### Events
+    (none)
+
+  ## VaultFactoryFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getUserVaultImplementation()
+    - getVault(_user: address)
+    - predictVaultAddress(_user: address)
+    - totalVaults()
+
+  ### Write Functions
+    - createVault()
+    - setImplementation(_implementation: address)
+
+  ### Events
+    - VaultCreated(indexed user: address, indexed vault: address)
+    - VaultImplementationUpdated(indexed oldImpl: address, indexed newImpl: address)
+
+  ## CentralVaultFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getUtilization(_token: address)
+    - getVaultBalance(_token: address)
+
+  ### Write Functions
+    - defundVault(_token: address, _amount: uint256, _to: address)
+    - fundVault(_token: address, _amount: uint256)
+
+  ### Events
+    - VaultDefunded(indexed token: address, amount: uint256, indexed to: address)
+    - VaultFunded(indexed token: address, amount: uint256, indexed funder: address)
+
+  ## CollateralFacet
+  Addresses: hyperpaxeer=0xeA65FE02665852c615774A3041DFE6f00fb77537
+
+  ### Read Functions
+    - getCollateralDecimals(_token: address)
+    - getCollateralTokens()
+    - getCollateralValue(_token: address, _amount: uint256)
+    - isAcceptedCollateral(_token: address)
+
+  ### Write Functions
+    - addCollateral(_token: address)
+    - removeCollateral(_token: address)
+
+  ### Events
+    - CollateralAdded(indexed token: address, decimals: uint8)
+    - CollateralRemoved(indexed token: address)
+
+  ## UserVault
+  Addresses: hyperpaxeer=0x4195155D92451a47bF76987315DaEE499f1D7352
+
+  ### Read Functions
+    - diamond()
+    - getBalance(_token: address)
+    - getLockedBalance(_token: address)
+    - isInitialized()
+    - vaultOwner()
+
+  ### Write Functions
+    - deposit(_token: address, _amount: uint256)
+    - emergencyWithdraw(_token: address)
+    - initialize(owner_: address, diamond_: address)
+    - lockCollateral(_token: address, _amount: uint256, _centralVault: address)
+    - receiveCollateral(_token: address, _amount: uint256)
+    - withdraw(_token: address, _amount: uint256)
+
+  ### Events
+    - CollateralLocked(indexed token: address, amount: uint256)
+    - CollateralReleased(indexed token: address, amount: uint256)
+    - Deposited(indexed token: address, amount: uint256)
+    - EmergencyWithdrawn(indexed token: address, amount: uint256)
+    - Withdrawn(indexed token: address, amount: uint256)
+
+## Module Structure
+- src/abis/        Typed ABI exports (as const)
+- src/types/       TypeScript interfaces
+- src/hooks/       React hooks (useRead*, useWrite*, useSimulate*, useWatch*)
+- src/actions/     Non-React contract actions
+- src/constants/   Addresses, chain configs, RPC URLs
+- subgraph/        Graph Protocol subgraph
+- docs/            Markdown API docs

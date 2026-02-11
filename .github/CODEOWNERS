@@ -1,0 +1,26 @@
+# Sidiora Perpetual Protocol -- Code Owners
+#
+# These users will be automatically requested for review on PRs
+# that modify the matched paths.
+
+# Default owner for everything
+* @Paxeer-Network/core
+
+# Smart contracts -- require security-aware reviewers
+/contracts/ @Paxeer-Network/security @Paxeer-Network/core
+
+# Deployment and upgrade scripts -- high risk
+/scripts/deploy/ @Paxeer-Network/security @Paxeer-Network/core
+/scripts/upgrade/ @Paxeer-Network/security @Paxeer-Network/core
+
+# Oracle node -- affects pricing integrity
+/.oracle/ @Paxeer-Network/core
+
+# Indexer -- data integrity
+/.indexer/ @Paxeer-Network/core
+
+# SDK -- public API surface
+/sdk/ @Paxeer-Network/core
+
+# CI/CD and security config
+/.github/ @Paxeer-Network/security

@@ -1,0 +1,379 @@
+export const OrderBookFacetAbi = [
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'orderId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'user',
+        type: 'address',
+      },
+    ],
+    name: 'OrderCancelled',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'orderId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'positionId',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'executionPrice',
+        type: 'uint256',
+      },
+    ],
+    name: 'OrderExecuted',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'orderId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'user',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'marketId',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint8',
+        name: 'orderType',
+        type: 'uint8',
+      },
+      {
+        indexed: false,
+        internalType: 'bool',
+        name: 'isLong',
+        type: 'bool',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'triggerPrice',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'sizeUsd',
+        type: 'uint256',
+      },
+    ],
+    name: 'OrderPlaced',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'positionId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'user',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'uint256',
+        name: 'marketId',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'bool',
+        name: 'isLong',
+        type: 'bool',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'sizeUsd',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'leverage',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'entryPrice',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'collateralToken',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'collateralAmount',
+        type: 'uint256',
+      },
+    ],
+    name: 'PositionOpened',
+    type: 'event',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_orderId',
+        type: 'uint256',
+      },
+    ],
+    name: 'cancelOrder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_orderId',
+        type: 'uint256',
+      },
+    ],
+    name: 'executeOrder',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'positionId',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_orderId',
+        type: 'uint256',
+      },
+    ],
+    name: 'getOrder',
+    outputs: [
+      {
+        internalType: 'address',
+        name: 'user',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'marketId',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: 'isLong',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint8',
+        name: 'orderType',
+        type: 'uint8',
+      },
+      {
+        internalType: 'uint256',
+        name: 'triggerPrice',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'limitPrice',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'sizeUsd',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'leverage',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: 'collateralToken',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'collateralAmount',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: 'active',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_user',
+        type: 'address',
+      },
+    ],
+    name: 'getUserOrderIds',
+    outputs: [
+      {
+        internalType: 'uint256[]',
+        name: '',
+        type: 'uint256[]',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_marketId',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: '_isLong',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint256',
+        name: '_triggerPrice',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: '_sizeUsd',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: '_leverage',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: '_collateralToken',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: '_collateralAmount',
+        type: 'uint256',
+      },
+    ],
+    name: 'placeLimitOrder',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'orderId',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_marketId',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: '_isLong',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint256',
+        name: '_triggerPrice',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: '_limitPrice',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: '_sizeUsd',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: '_leverage',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: '_collateralToken',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: '_collateralAmount',
+        type: 'uint256',
+      },
+    ],
+    name: 'placeStopLimitOrder',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'orderId',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;

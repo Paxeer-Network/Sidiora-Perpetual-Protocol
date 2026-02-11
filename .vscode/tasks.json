@@ -1,0 +1,87 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compile Contracts",
+      "type": "shell",
+      "command": "npx hardhat compile",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "npx hardhat test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests (with gas)",
+      "type": "shell",
+      "command": "REPORT_GAS=true npx hardhat test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Coverage",
+      "type": "shell",
+      "command": "npx hardhat coverage",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint All",
+      "type": "shell",
+      "command": "pnpm lint",
+      "group": "test",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Format All",
+      "type": "shell",
+      "command": "pnpm format",
+      "problemMatcher": []
+    },
+    {
+      "label": "Contract Sizes",
+      "type": "shell",
+      "command": "npx hardhat size-contracts",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy to Paxeer",
+      "type": "shell",
+      "command": "node scripts/deploy/deploy-all.js --network paxeer-network",
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify Contracts",
+      "type": "shell",
+      "command": "node scripts/verify-contracts.js",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Oracle Node",
+      "type": "shell",
+      "command": "npm start",
+      "options": {
+        "cwd": "${workspaceFolder}/.oracle"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Indexer",
+      "type": "shell",
+      "command": "npm start",
+      "options": {
+        "cwd": "${workspaceFolder}/.indexer"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

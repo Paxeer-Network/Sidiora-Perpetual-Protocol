@@ -1,0 +1,244 @@
+{
+  "network": "hardhat",
+  "diamondAddress": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "facets": {
+    "DiamondCutFacet": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "selectors": [
+        "0x1f931c1c"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.052Z"
+    },
+    "DiamondLoupeFacet": {
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "selectors": [
+        "0xcdffacc6",
+        "0x52ef6b2c",
+        "0xadfca15e",
+        "0x7a0ed627",
+        "0x01ffc9a7"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.122Z"
+    },
+    "OwnershipFacet": {
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "selectors": [
+        "0x8da5cb5b",
+        "0xf2fde38b"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.122Z"
+    },
+    "PositionFacet": {
+      "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "selectors": [
+        "0xa8f35adf",
+        "0x8347a72f",
+        "0xa126d601",
+        "0x1b3ee0f1",
+        "0xeb02c301",
+        "0x5c58777e",
+        "0xeddf7570",
+        "0x6d055f06",
+        "0xeaa6185c"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.201Z"
+    },
+    "OrderBookFacet": {
+      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "selectors": [
+        "0x514fcac7",
+        "0x94f61134",
+        "0xd09ef241",
+        "0xec641a1d",
+        "0x569e792e",
+        "0xa1d442c7"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.225Z"
+    },
+    "LiquidationFacet": {
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "selectors": [
+        "0x0a4842f8",
+        "0x3e129715",
+        "0x415f1240"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.244Z"
+    },
+    "FundingRateFacet": {
+      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "selectors": [
+        "0x8c1b753a",
+        "0x40f04812",
+        "0xb4acb042",
+        "0x2cda90b2",
+        "0xed08f9dc",
+        "0x894feb9d"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.265Z"
+    },
+    "OracleFacet": {
+      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "selectors": [
+        "0x7ffbc7a8",
+        "0x8fd652c3",
+        "0x5b67c98d",
+        "0xe7572230",
+        "0x980d7d37",
+        "0x13c121bd",
+        "0x044e984f",
+        "0xdb4e3ec8",
+        "0x89bc4623",
+        "0x65b2d327"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.318Z"
+    },
+    "VirtualAMMFacet": {
+      "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "selectors": [
+        "0x5af3d061",
+        "0x068bcd8d",
+        "0xe496230a",
+        "0x37fb2ee0",
+        "0xa81b1979"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.336Z"
+    },
+    "PriceFeedFacet": {
+      "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "selectors": [
+        "0x2996c19d",
+        "0x12080647",
+        "0x2c854f23",
+        "0x955e7af1",
+        "0x06586913"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.360Z"
+    },
+    "AccessControlFacet": {
+      "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "selectors": [
+        "0xee4c2bff",
+        "0x741fe126",
+        "0x364bc15a",
+        "0xd6f0d39f",
+        "0x6b133ea2",
+        "0xe63ab1e9",
+        "0x67cde192",
+        "0x248a9ca3",
+        "0x2f2ff15d",
+        "0x91d14854",
+        "0x8bb9c5bf",
+        "0xd547741f",
+        "0x1e4e0091"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.409Z"
+    },
+    "PausableFacet": {
+      "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+      "selectors": [
+        "0xb714fa3e",
+        "0x183db695",
+        "0x98e9a952",
+        "0xfc12524c",
+        "0x154ae6b6",
+        "0x87784844"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.424Z"
+    },
+    "VaultFactoryFacet": {
+      "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+      "selectors": [
+        "0x5d12928b",
+        "0x8d3a76bb",
+        "0x0eb9af38",
+        "0x29eb7e17",
+        "0xd784d426",
+        "0x8d654023"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.443Z"
+    },
+    "CentralVaultFacet": {
+      "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+      "selectors": [
+        "0xd8f8deb8",
+        "0xa5e0759a",
+        "0xfdce8643",
+        "0xd3d7c002"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.458Z"
+    },
+    "CollateralFacet": {
+      "address": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+      "selectors": [
+        "0xf0d2d5a8",
+        "0xeb7aac5f",
+        "0xb58eb63f",
+        "0x2b037c57",
+        "0xd979b720",
+        "0xc99d3a06"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.489Z"
+    },
+    "MarketRegistryFacet": {
+      "address": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c",
+      "selectors": [
+        "0x9bd1d513",
+        "0x565c1714",
+        "0x96a44225",
+        "0xbd243ff3",
+        "0xdb8d55f1",
+        "0xeb44fdd3",
+        "0xf849f69e",
+        "0x6fcba377",
+        "0x8162486b",
+        "0xfcb8ee95"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.515Z"
+    },
+    "InsuranceFundFacet": {
+      "address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      "selectors": [
+        "0x9f30c09e",
+        "0x637b93ed",
+        "0xffa8faed",
+        "0x241161ff",
+        "0xa2c97f69"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.536Z"
+    },
+    "QuoterFacet": {
+      "address": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+      "selectors": [
+        "0x0c849b70",
+        "0x3dc355fe",
+        "0xa7b85d21",
+        "0xff05d3bc"
+      ],
+      "deployedAt": "2026-02-11T17:38:48.558Z"
+    }
+  },
+  "contracts": {
+    "UserVaultImplementation": {
+      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "deployedAt": "2026-02-11T17:38:48.607Z"
+    }
+  },
+  "timestamp": "2026-02-11T17:38:48.900Z",
+  "initialized": {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "AVAX",
+      "LINK"
+    ],
+    "fees": {
+      "taker": 10,
+      "maker": 5,
+      "liquidation": 500,
+      "insurance": 2000
+    },
+    "oracleStaleness": 120,
+    "timestamp": "2026-02-11T17:38:48.900Z"
+  }
+}
