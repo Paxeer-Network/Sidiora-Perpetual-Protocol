@@ -1,10 +1,12 @@
 <p align="center">
+  <a href="https://github.com/Paxeer-Network/Sidiora-Perpetual-Protocol/actions/workflows/ci.yml"><img src="https://github.com/Paxeer-Network/Sidiora-Perpetual-Protocol/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Solidity-%5E0.8.27-363636?style=for-the-badge&logo=solidity&logoColor=white" alt="Solidity" />
   <img src="https://img.shields.io/badge/EIP--2535-Diamond%20Pattern-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Diamond" />
   <img src="https://img.shields.io/badge/Chain-Paxeer%20(125)-00B4D8?style=for-the-badge" alt="Paxeer" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge" alt="License" />
   <img src="https://img.shields.io/badge/Status-Deployed-brightgreen?style=for-the-badge" alt="Status" />
   <img src="https://img.shields.io/badge/Dependencies-Zero-orange?style=for-the-badge" alt="Zero Deps" />
+
 </p>
 
 <h1 align="center">Sidiora Perpetual Protocol</h1>
