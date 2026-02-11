@@ -370,5 +370,35 @@
       "address": "0x7c69c84daAEe90B21eeCABDb8f0387897E9B7B37",
       "decimals": 6
     }
-  ]
+  ],
+  "centralVaultFunding": {
+    "amountPerToken": 250000,
+    "tokens": [
+      {
+        "symbol": "USID",
+        "address": "0x6C32c255EeBD6A72B56ee82454d7140020919652",
+        "amount": "250000",
+        "txHash": "0x211f5d820da29c0d38ee8d42f77fa8f11d6babdb040ff3f3d6ec11024f6fd312"
+      },
+      {
+        "symbol": "USDC",
+        "address": "0xf8850b62AE017c55be7f571BBad840b4f3DA7D49",
+        "amount": "250000",
+        "txHash": "0x5153445e47fa7f1c9b2f8db269bb9230049b8d6cbe6e185470f7859f5c550d4f"
+      },
+      {
+        "symbol": "USDT",
+        "address": "0x5dfE06Ae465a39c442c45ed273c523BaC2d1f6a8",
+        "amount": "250000",
+        "txHash": "0xc7225d58afd9cf9ad7a730ae71062c2ef35436483b7cee65b72cc55a43f0481e"
+      },
+      {
+        "symbol": "USDL",
+        "address": "0x7c69c84daAEe90B21eeCABDb8f0387897E9B7B37",
+        "amount": "250000",
+        "txHash": "0xdc250578cf02d9a0834624bb6b80379f2af0528a11a73f52228a1d944181a363"
+      }
+    ],
+    "timestamp": "2026-02-11T22:59:22.216Z"
+  }
 }
