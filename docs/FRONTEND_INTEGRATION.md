@@ -12,7 +12,7 @@
 2. [Network & Addresses](#2-network--addresses)
 3. [SDK Installation](#3-sdk-installation)
 4. [Account Creation Flow](#4-account-creation-flow-uservault)
-5. [Collateral: Deposit & Withdraw](#5-collateral-deposit--withdraw)
+5. [Collateral: Decimals, Deposit & Withdraw](#5-collateral-decimals-deposit--withdraw)
 6. [Market Data (Off-Chain)](#6-market-data-off-chain)
 7. [Trading: Market Orders (Open Position)](#7-trading-market-orders-open-position)
 8. [Trading: Limit & Stop-Limit Orders](#8-trading-limit--stop-limit-orders)
@@ -208,37 +208,93 @@ import { readCollateralFacetGetCollateralTokens } from '@paxeer-network/sidiora-
 const tokens = await readCollateralFacetGetCollateralTokens(config);
 ```
 
-### 5.2 Deposit Flow
+### 5.2 Resolve Token Decimals First
+
+**CRITICAL:** Each collateral token has its own decimal precision. You **must** use the correct
+decimals when constructing amounts. Do NOT hardcode 18 decimals for all tokens.
+
+| Token | Decimals | `parseUnits("5000", ?)` |
+|---|---|---|
+| USID | 18 | `5000000000000000000000` (5000e18) |
+| USDC | 6 | `5000000000` (5000e6) |
+| USDT | 6 | `5000000000` (5000e6) |
+| USDL | 6 | `5000000000` (5000e6) |
+
+Query decimals on-chain or from the subgraph — never assume:
+
+```ts
+import { readCollateralFacetGetCollateralDecimals } from '@paxeer-network/sidiora-perpetuals';
+
+const decimals = await readCollateralFacetGetCollateralDecimals(config, {
+  _token: collateralTokenAddress,
+});
+
+// Then use parseUnits with the CORRECT decimals
+const amount = parseUnits(userInput, decimals);  // e.g. parseUnits("5000", 6) for USDC
+```
+
+### 5.3 Deposit Flow
 
 **Step 1: Approve the UserVault to spend tokens**
 
-The user must approve their **own vault address** (not the Diamond) to spend their stablecoins:
+The user must approve their **own vault address** (not the Diamond) to spend their stablecoins.
+
+> **WARNING: Non-standard ERC-20 approve.**
+> USDT, USDC, and USDL on Paxeer Network do **not** return a `bool` from `approve()`.
+> Viem's `simulateContract` will throw `"returned no data"` if you use the standard ERC-20 ABI.
+> Use the ABI below which declares `approve` with **no return value**, or skip simulation for approve.
 
 ```ts
-// Standard ERC-20 approve — vault address is the spender
+import { parseUnits } from 'viem';
+
+// ── ABI that handles non-standard approve (no bool return) ──────────
+const APPROVE_ABI = [
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],  // ← no return value — works with USDT/USDC/USDL and standard tokens
+  },
+] as const;
+
+// ── Approve using correct decimals ──────────────────────────────────
+const decimals = 6; // ← queried from getCollateralDecimals() or subgraph
+const amount = parseUnits('5000', decimals);  // 5000 USDC = 5000000000 (NOT 5000e18)
+
 const approveTx = await writeContract(config, {
   address: collateralTokenAddress,
-  abi: erc20Abi,
+  abi: APPROVE_ABI,
   functionName: 'approve',
   args: [userVaultAddress, amount],
 });
+await waitForTransactionReceipt(config, { hash: approveTx });
 ```
 
 **Step 2: Deposit into vault**
 
 ```ts
+import { UserVaultAbi } from '@paxeer-network/sidiora-perpetuals';
+
 // Call deposit on the user's vault clone (NOT the Diamond)
+// Amount MUST use the token's native decimals
 const depositTx = await writeContract(config, {
   address: userVaultAddress,  // ← user's vault clone address
   abi: UserVaultAbi,
   functionName: 'deposit',
-  args: [collateralTokenAddress, amount],
+  args: [collateralTokenAddress, amount],  // same `amount` from approve step
 });
 ```
 
-> **Important:** `deposit()` is called on the **user's vault clone**, not on the Diamond.
+> **Important:**
+> - `deposit()` is called on the **user's vault clone**, not on the Diamond.
+> - `amount` must be in the token's **native decimals** (6 for USDC/USDT/USDL, 18 for USID).
+> - If `approve` didn't go through, `deposit` will revert with `"LibSafeERC20: transferFrom failed"`.
 
-### 5.3 Check Balances
+### 5.4 Check Balances
 
 ```ts
 // Available (idle) balance in vault
@@ -258,7 +314,7 @@ const locked = await readContract(config, {
 });
 ```
 
-### 5.4 Withdraw
+### 5.5 Withdraw
 
 Can only withdraw **available** (unlocked) balance:
 
@@ -271,7 +327,7 @@ const withdrawTx = await writeContract(config, {
 });
 ```
 
-### 5.5 Emergency Withdraw
+### 5.6 Emergency Withdraw
 
 Withdraws all available balance at once:
 
@@ -528,14 +584,14 @@ Keeper monitors prices every ~30s
     ┌────┴────┐
     │ Trigger  │ No trigger
     │ met      │ → wait
-    ▼         
+    ▼
 Keeper calls executeOrder()
          │
     ┌────┴────┐
     │ Success  │ Revert (e.g. limit price exceeded)
     ▼          │
 Position       │ → Order stays active, keeper retries
-opened         
+opened
     │
     ▼
 OrderExecuted event + PositionOpened event
