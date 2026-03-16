@@ -63,12 +63,14 @@ type Order {
   userAddress: String!
   marketId: Int!
   orderType: Int!
+  orderTypeName: String
   isLong: Boolean!
   triggerPrice: BigDecimal!
   sizeUsd: BigDecimal!
   status: String!
   positionId: BigDecimal
   executionPrice: BigDecimal
+  failureReason: String
   placedAt: DateTime
   resolvedAt: DateTime
   placedBlock: Int
@@ -215,12 +217,66 @@ type GlobalStats {
   indexerBlock: Int!
 }
 
+type KeeperCycle {
+  id: Int!
+  onchainTimestamp: Int!
+  marketsUpdated: Int!
+  ordersExecuted: Int!
+  liquidationsExecuted: Int!
+  ordersFailed: Int!
+  liquidationsFailed: Int!
+  blockNumber: Int!
+  txHash: String!
+  blockTimestamp: DateTime!
+}
+
+type AccountLedgerEntry {
+  id: Int!
+  entryId: BigDecimal!
+  userAddress: String!
+  entryType: Int!
+  tokenAddress: String!
+  amount: BigDecimal!
+  positionId: BigDecimal!
+  isDebit: Boolean!
+  blockNumber: Int!
+  txHash: String!
+  blockTimestamp: DateTime!
+}
+
+type Delegate {
+  id: Int!
+  userAddress: String!
+  delegateAddress: String!
+  canTrade: Boolean!
+  canWithdraw: Boolean!
+  canModifyMargin: Boolean!
+  expiry: BigDecimal!
+  isActive: Boolean!
+  blockNumber: Int!
+  txHash: String!
+  blockTimestamp: DateTime!
+}
+
+type TradingAccountEvent {
+  id: Int!
+  eventType: String!
+  userAddress: String!
+  positionId: BigDecimal
+  tokenAddress: String
+  amount: BigDecimal
+  extraData: String
+  blockNumber: Int!
+  txHash: String!
+  blockTimestamp: DateTime!
+}
+
 type Query {
   position(positionId: String!): Position
   positions(userAddress: String, marketId: Int, status: String, limit: Int, offset: Int): [Position!]!
   trades(userAddress: String, marketId: Int, positionId: String, tradeType: String, limit: Int, offset: Int): [Trade!]!
   order(orderId: String!): Order
-  orders(userAddress: String, marketId: Int, status: String, limit: Int, offset: Int): [Order!]!
+  orders(userAddress: String, marketId: Int, status: String, orderType: Int, limit: Int, offset: Int): [Order!]!
   liquidations(userAddress: String, marketId: Int, limit: Int, offset: Int): [Liquidation!]!
   market(marketId: Int!): Market
   markets: [Market!]!
@@ -238,4 +294,8 @@ type Query {
   marketStats(marketId: Int!): MarketStats
   globalStats: GlobalStats
   indexerStatus: IndexerStatus
+  keeperCycles(limit: Int, offset: Int): [KeeperCycle!]!
+  accountLedger(userAddress: String, positionId: String, limit: Int, offset: Int): [AccountLedgerEntry!]!
+  delegates(userAddress: String!): [Delegate!]!
+  tradingAccountEvents(userAddress: String, eventType: String, limit: Int, offset: Int): [TradingAccountEvent!]!
 }

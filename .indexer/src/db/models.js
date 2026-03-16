@@ -258,6 +258,97 @@ async function insertProtocolEvent(e) {
   );
 }
 
+// ============================================================
+//  KEEPER CYCLES (V2)
+// ============================================================
+
+async function insertKeeperCycle(c) {
+  await pool.query(
+    `INSERT INTO keeper_cycles (onchain_timestamp, markets_updated, orders_executed, liquidations_executed,
+       orders_failed, liquidations_failed, block_number, tx_hash, block_timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [c.onchainTimestamp, c.marketsUpdated, c.ordersExecuted, c.liquidationsExecuted,
+     c.ordersFailed, c.liquidationsFailed, c.blockNumber, c.txHash, c.timestamp]
+  );
+}
+
+// ============================================================
+//  ORDER FAILURE (V2)
+// ============================================================
+
+async function setOrderFailed(o) {
+  await pool.query(
+    `UPDATE orders SET status = 'failed', failure_reason = $2,
+       resolved_at = $3, resolved_block = $4, resolved_tx_hash = $5
+     WHERE order_id = $1 AND status = 'active'`,
+    [o.orderId, o.reason, o.timestamp, o.blockNumber, o.txHash]
+  );
+}
+
+// ============================================================
+//  ACCOUNT LEDGER (V2 — TradingAccount)
+// ============================================================
+
+async function insertLedgerEntry(e) {
+  await pool.query(
+    `INSERT INTO account_ledger (entry_id, user_address, entry_type, token_address, amount,
+       position_id, is_debit, block_number, tx_hash, block_timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [e.entryId, e.user, e.entryType, e.token, e.amount,
+     e.positionId, e.isDebit, e.blockNumber, e.txHash, e.timestamp]
+  );
+}
+
+// ============================================================
+//  DELEGATES (V2 — TradingAccount)
+// ============================================================
+
+async function upsertDelegate(d) {
+  await pool.query(
+    `INSERT INTO delegates (user_address, delegate_address, can_trade, can_withdraw,
+       can_modify_margin, expiry, is_active, block_number, tx_hash, block_timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9)
+     ON CONFLICT (user_address, delegate_address)
+     DO UPDATE SET can_trade = $3, can_withdraw = $4, can_modify_margin = $5,
+       expiry = $6, is_active = TRUE, block_number = $7, tx_hash = $8, block_timestamp = $9`,
+    [d.user, d.delegate, d.canTrade, d.canWithdraw, d.canModifyMargin,
+     d.expiry, d.blockNumber, d.txHash, d.timestamp]
+  );
+}
+
+async function removeDelegate(d) {
+  await pool.query(
+    `UPDATE delegates SET is_active = FALSE, block_number = $3, tx_hash = $4, block_timestamp = $5
+     WHERE user_address = $1 AND delegate_address = $2`,
+    [d.user, d.delegate, d.blockNumber, d.txHash, d.timestamp]
+  );
+}
+
+// ============================================================
+//  TRADING ACCOUNT EVENTS (V2)
+// ============================================================
+
+async function insertTradingAccountEvent(e) {
+  await pool.query(
+    `INSERT INTO trading_account_events (event_type, user_address, position_id, token_address,
+       amount, extra_data, block_number, tx_hash, block_timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [e.eventType, e.user, e.positionId || 0, e.token || null,
+     e.amount || 0, JSON.stringify(e.extraData || {}), e.blockNumber, e.txHash, e.timestamp]
+  );
+}
+
+// ============================================================
+//  MARGIN MODE (V2)
+// ============================================================
+
+async function updateMarginMode(m) {
+  await pool.query(
+    `UPDATE user_vaults SET margin_mode = $2 WHERE LOWER(user_address) = LOWER($1)`,
+    [m.user, m.mode]
+  );
+}
+
 module.exports = {
   getLastIndexedBlock,
   setLastIndexedBlock,
@@ -280,4 +371,12 @@ module.exports = {
   upsertPoolState,
   upsertFeeConfig,
   insertProtocolEvent,
+  // V2
+  insertKeeperCycle,
+  setOrderFailed,
+  insertLedgerEntry,
+  upsertDelegate,
+  removeDelegate,
+  insertTradingAccountEvent,
+  updateMarginMode,
 };

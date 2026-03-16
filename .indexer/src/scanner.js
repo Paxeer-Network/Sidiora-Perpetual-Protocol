@@ -229,6 +229,43 @@ class Scanner {
         await this._handleProtocolEvent(name, args, ctx);
         break;
 
+      // --- Keeper Multicall (V2) ---
+      case "KeeperCycleExecuted":
+        await this._handleKeeperCycleExecuted(args, ctx);
+        break;
+      case "OrderExecutionFailed":
+        await this._handleOrderExecutionFailed(args, ctx);
+        break;
+      case "LiquidationFailed":
+        await this._handleProtocolEvent(name, args, ctx);
+        break;
+
+      // --- Trading Account (V2) ---
+      case "MarginLocked":
+      case "MarginReleased":
+        await this._handleMarginEvent(name, args, ctx);
+        break;
+      case "LedgerEntryRecorded":
+        await this._handleLedgerEntry(args, ctx);
+        break;
+      case "DelegateAdded":
+        await this._handleDelegateAdded(args, ctx);
+        break;
+      case "DelegateRemoved":
+        await this._handleDelegateRemoved(args, ctx);
+        break;
+      case "MarginModeChanged":
+        await this._handleMarginModeChanged(args, ctx);
+        break;
+      case "MarginTransferred":
+        await this._handleMarginTransferred(args, ctx);
+        break;
+
+      // --- Market Registry (V2) ---
+      case "RobustnessParamsUpdated":
+        await this._handleProtocolEvent(name, args, ctx);
+        break;
+
       default:
         this.logger.debug(`Unhandled event: ${name}`);
     }
@@ -550,6 +587,133 @@ class Scanner {
       blockNumber: ctx.blockNumber,
       txHash: ctx.txHash,
       logIndex: ctx.logIndex,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  // ============================================================
+  //  V2 EVENT HANDLERS
+  // ============================================================
+
+  async _handleKeeperCycleExecuted(args, ctx) {
+    await models.insertKeeperCycle({
+      onchainTimestamp: Number(args[0]),
+      marketsUpdated: Number(args[1]),
+      ordersExecuted: Number(args[2]),
+      liquidationsExecuted: Number(args[3]),
+      ordersFailed: Number(args[4]),
+      liquidationsFailed: Number(args[5]),
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+
+    this.logger.debug(
+      `  KeeperCycle: markets=${args[1]} orders=${args[2]}/${args[4]} liqs=${args[3]}/${args[5]}`
+    );
+  }
+
+  async _handleOrderExecutionFailed(args, ctx) {
+    await models.setOrderFailed({
+      orderId: args[0].toString(),
+      reason: args[1],
+      timestamp: ctx.timestamp,
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+    });
+
+    await models.insertProtocolEvent({
+      eventName: "OrderExecutionFailed",
+      data: { orderId: args[0].toString(), reason: args[1] },
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      logIndex: ctx.logIndex,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleMarginEvent(name, args, ctx) {
+    const eventType = name === "MarginLocked" ? "margin_locked" : "margin_released";
+    await models.insertTradingAccountEvent({
+      eventType,
+      user: args[0],
+      positionId: args[1].toString(),
+      token: args[2],
+      amount: args[3].toString(),
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleLedgerEntry(args, ctx) {
+    await models.insertLedgerEntry({
+      entryId: args[0].toString(),
+      user: args[1],
+      entryType: Number(args[2]),
+      token: args[3],
+      amount: args[4].toString(),
+      positionId: args[5].toString(),
+      isDebit: args[6],
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleDelegateAdded(args, ctx) {
+    await models.upsertDelegate({
+      user: args[0],
+      delegate: args[1],
+      canTrade: args[2],
+      canWithdraw: args[3],
+      canModifyMargin: args[4],
+      expiry: args[5].toString(),
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleDelegateRemoved(args, ctx) {
+    await models.removeDelegate({
+      user: args[0],
+      delegate: args[1],
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleMarginModeChanged(args, ctx) {
+    await models.updateMarginMode({
+      user: args[0],
+      mode: Number(args[1]),
+    });
+
+    await models.insertTradingAccountEvent({
+      eventType: "margin_mode_changed",
+      user: args[0],
+      extraData: { newMode: Number(args[1]) },
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
+      timestamp: ctx.timestamp,
+    });
+  }
+
+  async _handleMarginTransferred(args, ctx) {
+    await models.insertTradingAccountEvent({
+      eventType: "margin_transferred",
+      user: args[0],
+      positionId: args[1].toString(),
+      token: args[3],
+      amount: args[4].toString(),
+      extraData: {
+        fromPositionId: args[1].toString(),
+        toPositionId: args[2].toString(),
+      },
+      blockNumber: ctx.blockNumber,
+      txHash: ctx.txHash,
       timestamp: ctx.timestamp,
     });
   }

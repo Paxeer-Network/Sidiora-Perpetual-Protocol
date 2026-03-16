@@ -1,0 +1,173 @@
+# Windsurf AI Agent Optimization System
+# Configuration for blockchain development
+
+version: "1.0.0"
+name: blockchain-agent-system
+
+# Agent Identity
+agent:
+  name: blockchain-dev-agent
+  description: "Optimized AI agent for blockchain application development"
+  default_skills:
+    - blockchain-developer
+    - solidity-security
+    - code-quality
+    - git-workflow
+
+# Context Management
+context:
+  max_tokens: 32000
+  compression_threshold: 8000
+  
+  # Auto-indexing settings
+  auto_index: true
+  index_on:
+    - file_change
+    - session_start
+  
+  # Priority levels for context loading
+  priority_levels:
+    L1_immediate:
+      - current_file
+      - active_workflow_state
+      - recent_messages
+    L2_related:
+      - imported_files
+      - test_files
+      - recent_edits
+    L3_project:
+      - architecture_overview
+      - conventions
+      - dependency_structure
+    L4_historical:
+      - past_decisions
+      - session_summaries
+      - relevant_memories
+
+# Persistence Configuration
+persistence:
+  database: .windsurf/data/knowledge.db
+  vector_store: .windsurf/data/vectors.index
+  
+  # Retention policies
+  session_retention: 30d
+  memory_retention: 90d
+  cache_ttl: 3600
+  
+  # Backup settings
+  auto_backup: true
+  backup_interval: 24h
+  backup_location: .windsurf/data/backups/
+
+# Trigger System
+triggers:
+  enabled: true
+  config_file: .windsurf/triggers.yaml
+  
+  # Event sources
+  watch:
+    - file_changes
+    - user_input
+    - session_events
+    - idle_timeout
+
+# Workflow Engine
+workflows:
+  directory: .windsurf/workflows
+  checkpoints_enabled: true
+  max_parallel_steps: 3
+  
+  # Auto-save workflow state
+  auto_checkpoint: true
+  checkpoint_interval: 5m
+
+# Skill Registry
+skills:
+  directory: .windsurf/skills
+  
+  # Skill caching
+  cache_enabled: true
+  cache_ttl: 3600
+  
+  # Skill tiers for blockchain
+  tiers:
+    core:
+      - blockchain-developer
+      - solidity-security
+      - defi-protocol-templates
+      - nft-standards
+      - web3-testing
+    critical:
+      - security-audit
+      - systematic-debugging
+      - test-driven-development
+      - defense-in-depth
+      - code-quality
+      - pr-review
+      - git-workflow
+      - architecture
+    support:
+      - quant-analyst
+      - risk-manager
+      - payment-integration
+      - api-documenter
+      - brainstorming
+      - writing-plans
+      - deep-researcher
+
+# Blockchain-Specific Settings
+blockchain:
+  # Default networks
+  networks:
+    - ethereum
+    - polygon
+    - arbitrum
+    - optimism
+    - base
+  
+  # Tool preferences
+  tools:
+    framework: hardhat  # or foundry
+    testing: hardhat    # or forge
+    linting: solhint
+    security: slither
+  
+  # Gas optimization targets
+  gas:
+    optimization_runs: 200
+    target_gas_limit: 30000000
+  
+  # Security requirements
+  security:
+    require_audit_checklist: true
+    require_test_coverage: 90
+    require_slither_clean: true
+
+# Telemetry & Logging
+telemetry:
+  decisions_log: true
+  performance_metrics: true
+  log_level: info
+  log_file: .windsurf/logs/agent.log
+
+# Safety Guardrails
+guardrails:
+  require_confirmation:
+    - file_deletion
+    - external_requests
+    - dependency_installation
+    - contract_deployment
+    - mainnet_transactions
+  
+  auto_approve:
+    - read_operations
+    - search_operations
+    - test_execution
+    - local_compilation
+  
+  # Blockchain-specific guards
+  blockchain_guards:
+    - no_mainnet_without_confirmation
+    - require_test_before_deploy
+    - validate_gas_estimates
+    - check_contract_verification

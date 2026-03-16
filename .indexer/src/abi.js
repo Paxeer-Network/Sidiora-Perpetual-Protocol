@@ -85,6 +85,29 @@ const DIAMOND_EVENTS_ABI = [
   "event ADLThresholdUpdated(uint256 oldThreshold, uint256 newThreshold)",
 
   // ============================================================
+  //  KEEPER MULTICALL EVENTS (KeeperMulticallFacet — V2)
+  // ============================================================
+  "event KeeperCycleExecuted(uint256 timestamp, uint256 marketsUpdated, uint256 ordersExecuted, uint256 liquidationsExecuted, uint256 ordersFailed, uint256 liquidationsFailed)",
+  "event OrderExecutionFailed(uint256 indexed orderId, string reason)",
+  "event LiquidationFailed(uint256 indexed positionId, string reason)",
+
+  // ============================================================
+  //  TRADING ACCOUNT EVENTS (TradingAccount — V2)
+  // ============================================================
+  "event MarginLocked(address indexed user, uint256 indexed positionId, address token, uint256 amount)",
+  "event MarginReleased(address indexed user, uint256 indexed positionId, address token, uint256 amount)",
+  "event LedgerEntryRecorded(uint256 indexed entryId, address indexed user, uint8 entryType, address token, uint256 amount, uint256 positionId, bool isDebit)",
+  "event DelegateAdded(address indexed user, address indexed delegate, bool canTrade, bool canWithdraw, bool canModifyMargin, uint256 expiry)",
+  "event DelegateRemoved(address indexed user, address indexed delegate)",
+  "event MarginModeChanged(address indexed user, uint8 newMode)",
+  "event MarginTransferred(address indexed user, uint256 fromPositionId, uint256 toPositionId, address token, uint256 amount)",
+
+  // ============================================================
+  //  MARKET REGISTRY EVENTS (V2)
+  // ============================================================
+  "event RobustnessParamsUpdated(uint256 maxPriceDeviationBps, uint256 minPositionSizeUsd, uint256 minOrderSizeUsd, uint256 maxFundingRatePerSecond)",
+
+  // ============================================================
   //  DIAMOND / OWNERSHIP / ACCESS CONTROL
   // ============================================================
   "event DiamondCut(tuple(address facetAddress, uint8 action, bytes4[] functionSelectors)[] _diamondCut, address _init, bytes _calldata)",

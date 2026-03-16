@@ -309,6 +309,17 @@ async function migrate(reset = false) {
       VALUES ('last_indexed_block', '0')
       ON CONFLICT (key) DO NOTHING
     `);
+
+    // Run V2 robustness migration
+    console.log("Running V2 robustness migration...");
+    const fs = require("fs");
+    const path = require("path");
+    const v2Sql = fs.readFileSync(
+      path.join(__dirname, "migrations", "002-v2-robustness.sql"),
+      "utf8"
+    );
+    await client.query(v2Sql);
+    console.log("V2 migration complete.");
   } finally {
     client.release();
   }

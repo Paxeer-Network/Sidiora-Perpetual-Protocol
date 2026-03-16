@@ -29,7 +29,7 @@
       "deployedAt": "2026-02-11T17:41:19.728Z"
     },
     "PositionFacet": {
-      "address": "0xD0f2448eF25427cd1555811f73D1d8d2FAbCf74e",
+      "address": "0xdB97C3751B990ce9b6bf3A693307827269df9723",
       "selectors": [
         "0xa8f35adf",
         "0x8347a72f",
@@ -39,33 +39,36 @@
         "0x5c58777e",
         "0xeddf7570",
         "0x6d055f06",
-        "0xeaa6185c"
+        "0xeaa6185c",
+        "0x6a9b1891"
       ],
-      "deployedAt": "2026-02-11T17:41:25.360Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "OrderBookFacet": {
-      "address": "0xd2ff3a1684B970750b7FB912b6293C0842554eb4",
+      "address": "0xB3613A2BA3Faa57805D4214BD2D7e2E0d4943599",
       "selectors": [
         "0x514fcac7",
         "0x94f61134",
         "0xd09ef241",
         "0xec641a1d",
         "0x569e792e",
-        "0xa1d442c7"
+        "0xa1d442c7",
+        "0x1a6c35e0",
+        "0x4b10244d"
       ],
-      "deployedAt": "2026-02-11T17:41:28.288Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "LiquidationFacet": {
-      "address": "0xfB1Efb83568635d5fBC1C572F5Cb03FF8fF81982",
+      "address": "0x5231a97f4aeC1684C255D92A0e9b7955FD27EC84",
       "selectors": [
         "0x0a4842f8",
         "0x3e129715",
         "0x415f1240"
       ],
-      "deployedAt": "2026-02-11T17:41:31.043Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "FundingRateFacet": {
-      "address": "0x3B13193149142ee25926DfAe5C169D36f8EfDf0c",
+      "address": "0xD33980A2D19daebe4bD934bD50E9f5006535277a",
       "selectors": [
         "0x8c1b753a",
         "0x40f04812",
@@ -74,10 +77,10 @@
         "0xed08f9dc",
         "0x894feb9d"
       ],
-      "deployedAt": "2026-02-11T17:41:33.704Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "OracleFacet": {
-      "address": "0x8699dE864496A7Af1F73540262FAA9eD561D7d0F",
+      "address": "0x431a16574B5F1E343A327f002021C232d8c24F18",
       "selectors": [
         "0x7ffbc7a8",
         "0x8fd652c3",
@@ -90,7 +93,7 @@
         "0x89bc4623",
         "0x65b2d327"
       ],
-      "deployedAt": "2026-02-11T17:41:39.010Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "VirtualAMMFacet": {
       "address": "0x460490264c76d8aE5739F0744e40160582dC7E17",
@@ -158,14 +161,14 @@
       "deployedAt": "2026-02-11T17:41:55.396Z"
     },
     "CentralVaultFacet": {
-      "address": "0xd09b87f5790C29fB3D25D642E7E681d722e2Be6A",
+      "address": "0x2fB21B9e338db7FEF8B2dF9F5bE2C575CA8F2712",
       "selectors": [
         "0xd8f8deb8",
         "0xa5e0759a",
         "0xfdce8643",
         "0xd3d7c002"
       ],
-      "deployedAt": "2026-02-11T17:41:58.021Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "CollateralFacet": {
       "address": "0x26D0BEE6F9249dD3d098288a74f7b026929dD6BD",
@@ -180,7 +183,7 @@
       "deployedAt": "2026-02-11T17:42:00.654Z"
     },
     "MarketRegistryFacet": {
-      "address": "0x2af1c76EC28F437B165594137f28d5A57Af1EEF3",
+      "address": "0x567724ab315cC775d8DD89b93cB9B332492495eA",
       "selectors": [
         "0x9bd1d513",
         "0x565c1714",
@@ -188,12 +191,14 @@
         "0xbd243ff3",
         "0xdb8d55f1",
         "0xeb44fdd3",
+        "0xfd52f3cd",
         "0xf849f69e",
         "0x6fcba377",
+        "0xc5fcc9ca",
         "0x8162486b",
         "0xfcb8ee95"
       ],
-      "deployedAt": "2026-02-11T17:42:03.328Z"
+      "deployedAt": "2026-03-16T05:01:13.962Z"
     },
     "InsuranceFundFacet": {
       "address": "0x830746A6b7b8989846d4B8848a12326d426Ed562",
@@ -215,15 +220,27 @@
         "0xff05d3bc"
       ],
       "deployedAt": "2026-02-11T17:42:08.673Z"
+    },
+    "KeeperMulticallFacet": {
+      "address": "0x4fEB3D865D743c88BE2C4f1b623e4946E9Cb19f5",
+      "selectors": [
+        "0xbb1fe744",
+        "0x74deec42"
+      ],
+      "deployedAt": "2026-03-16T05:01:13.963Z"
     }
   },
   "contracts": {
     "UserVaultImplementation": {
       "address": "0x4195155D92451a47bF76987315DaEE499f1D7352",
       "deployedAt": "2026-02-11T17:42:14.087Z"
+    },
+    "TradingAccountImplementation": {
+      "address": "0x2B96C3E5e184C919311dFcbE4753d0214e5255B3",
+      "deployedAt": "2026-03-16T05:01:13.963Z"
     }
   },
-  "timestamp": "2026-02-11T18:02:56.237Z",
+  "timestamp": "2026-03-16T05:01:13.963Z",
   "initialized": {
     "markets": [
       "BTC",
@@ -461,6 +478,32 @@
       "maxOpenInterest": "$5,000,000",
       "initialPrice": "$311.84",
       "addedAt": "2026-02-12T09:54:04.108Z"
+    }
+  ],
+  "upgrades": [
+    {
+      "version": "v2-robustness",
+      "updatedFacets": [
+        "PositionFacet",
+        "OrderBookFacet",
+        "LiquidationFacet",
+        "FundingRateFacet",
+        "OracleFacet",
+        "CentralVaultFacet",
+        "MarketRegistryFacet"
+      ],
+      "newFacets": [
+        "KeeperMulticallFacet"
+      ],
+      "tradingAccountImpl": "0x2B96C3E5e184C919311dFcbE4753d0214e5255B3",
+      "robustnessConfig": {
+        "maxPriceDeviationBps": 3000,
+        "minPositionSizeUsd": "5000000000000000000",
+        "minOrderSizeUsd": "5000000000000000000",
+        "maxFundingRatePerSecond": "100000000000"
+      },
+      "deployer": "0x4930De8022718F0111010f0Fd90d50744E859a4E",
+      "timestamp": "2026-03-16T05:01:13.963Z"
     }
   ]
 }

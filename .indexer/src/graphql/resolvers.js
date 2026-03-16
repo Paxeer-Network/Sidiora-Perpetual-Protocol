@@ -105,7 +105,7 @@ const resolvers = {
       return toCamel(res.rows[0]);
     },
 
-    orders: async (_, { userAddress, marketId, status, limit, offset }) => {
+    orders: async (_, { userAddress, marketId, status, orderType, limit, offset }) => {
       const p = paginate(limit, offset);
       let query = "SELECT * FROM orders WHERE 1=1";
       const params = [];
@@ -122,6 +122,10 @@ const resolvers = {
       if (status) {
         query += ` AND status = $${idx++}`;
         params.push(status);
+      }
+      if (orderType !== undefined && orderType !== null) {
+        query += ` AND order_type = $${idx++}`;
+        params.push(orderType);
       }
       query += ` ORDER BY order_id DESC LIMIT $${idx++} OFFSET $${idx++}`;
       params.push(p.limit, p.offset);
@@ -424,11 +428,97 @@ const resolvers = {
         isSynced: chainHead ? lastBlock >= chainHead - 5 : null,
       };
     },
+
+    // ============================================================
+    //  V2 — KEEPER CYCLES
+    // ============================================================
+
+    keeperCycles: async (_, { limit, offset }) => {
+      const p = paginate(limit, offset);
+      const res = await pool.query(
+        `SELECT * FROM keeper_cycles ORDER BY block_timestamp DESC LIMIT $1 OFFSET $2`,
+        [p.limit, p.offset]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V2 — ACCOUNT LEDGER
+    // ============================================================
+
+    accountLedger: async (_, { userAddress, positionId, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM account_ledger WHERE 1=1";
+      const params = [];
+      let idx = 1;
+
+      if (userAddress) {
+        query += ` AND LOWER(user_address) = LOWER($${idx++})`;
+        params.push(userAddress);
+      }
+      if (positionId) {
+        query += ` AND position_id = $${idx++}`;
+        params.push(positionId);
+      }
+      query += ` ORDER BY block_timestamp DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+
+      const res = await pool.query(query, params);
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V2 — DELEGATES
+    // ============================================================
+
+    delegates: async (_, { userAddress }) => {
+      const res = await pool.query(
+        `SELECT * FROM delegates WHERE LOWER(user_address) = LOWER($1) AND is_active = TRUE
+         ORDER BY block_timestamp DESC`,
+        [userAddress]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V2 — TRADING ACCOUNT EVENTS
+    // ============================================================
+
+    tradingAccountEvents: async (_, { userAddress, eventType, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM trading_account_events WHERE 1=1";
+      const params = [];
+      let idx = 1;
+
+      if (userAddress) {
+        query += ` AND LOWER(user_address) = LOWER($${idx++})`;
+        params.push(userAddress);
+      }
+      if (eventType) {
+        query += ` AND event_type = $${idx++}`;
+        params.push(eventType);
+      }
+      query += ` ORDER BY block_timestamp DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+
+      const res = await pool.query(query, params);
+      return res.rows.map((r) => ({
+        ...toCamel(r),
+        extraData: typeof r.extra_data === "string" ? r.extra_data : JSON.stringify(r.extra_data),
+      }));
+    },
   },
 
   // ============================================================
   //  NESTED RESOLVERS
   // ============================================================
+
+  Order: {
+    orderTypeName: (parent) => {
+      const names = { 0: "limit", 1: "stop_limit", 2: "take_profit", 3: "stop_loss" };
+      return names[parent.orderType] || `unknown_${parent.orderType}`;
+    },
+  },
 
   Position: {
     market: async (parent) => {

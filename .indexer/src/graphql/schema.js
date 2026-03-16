@@ -76,12 +76,14 @@ const typeDefs = gql`
     userAddress: String!
     marketId: Int!
     orderType: Int!
+    orderTypeName: String
     isLong: Boolean!
     triggerPrice: BigDecimal!
     sizeUsd: BigDecimal!
     status: String!
     positionId: BigDecimal
     executionPrice: BigDecimal
+    failureReason: String
     placedAt: DateTime
     resolvedAt: DateTime
     placedBlock: Int
@@ -230,6 +232,76 @@ const typeDefs = gql`
   }
 
   # ============================================================
+  #  KEEPER CYCLE (V2)
+  # ============================================================
+
+  type KeeperCycle {
+    id: Int!
+    onchainTimestamp: Int!
+    marketsUpdated: Int!
+    ordersExecuted: Int!
+    liquidationsExecuted: Int!
+    ordersFailed: Int!
+    liquidationsFailed: Int!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  ACCOUNT LEDGER (V2 — TradingAccount)
+  # ============================================================
+
+  type AccountLedgerEntry {
+    id: Int!
+    entryId: BigDecimal!
+    userAddress: String!
+    entryType: Int!
+    tokenAddress: String!
+    amount: BigDecimal!
+    positionId: BigDecimal!
+    isDebit: Boolean!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  DELEGATE (V2 — TradingAccount)
+  # ============================================================
+
+  type Delegate {
+    id: Int!
+    userAddress: String!
+    delegateAddress: String!
+    canTrade: Boolean!
+    canWithdraw: Boolean!
+    canModifyMargin: Boolean!
+    expiry: BigDecimal!
+    isActive: Boolean!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  TRADING ACCOUNT EVENT (V2)
+  # ============================================================
+
+  type TradingAccountEvent {
+    id: Int!
+    eventType: String!
+    userAddress: String!
+    positionId: BigDecimal
+    tokenAddress: String
+    amount: BigDecimal
+    extraData: String
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
   #  AGGREGATES
   # ============================================================
 
@@ -299,6 +371,7 @@ const typeDefs = gql`
       userAddress: String
       marketId: Int
       status: String
+      orderType: Int
       limit: Int
       offset: Int
     ): [Order!]!
@@ -361,6 +434,28 @@ const typeDefs = gql`
     marketStats(marketId: Int!): MarketStats
     globalStats: GlobalStats
     indexerStatus: IndexerStatus
+
+    # V2 — Keeper Cycles
+    keeperCycles(limit: Int, offset: Int): [KeeperCycle!]!
+
+    # V2 — Account Ledger
+    accountLedger(
+      userAddress: String
+      positionId: String
+      limit: Int
+      offset: Int
+    ): [AccountLedgerEntry!]!
+
+    # V2 — Delegates
+    delegates(userAddress: String!): [Delegate!]!
+
+    # V2 — Trading Account Events
+    tradingAccountEvents(
+      userAddress: String
+      eventType: String
+      limit: Int
+      offset: Int
+    ): [TradingAccountEvent!]!
   }
 `;
 
