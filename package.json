@@ -27,7 +27,7 @@
     "gas": "REPORT_GAS=true hardhat test",
     "coverage": "hardhat coverage",
     "slither": "slither . --config-file slither.config.json",
-    "clean:all": "pnpm clean && rm -rf node_modules artifacts cache out",
+    "wipe": "rm -rf artifacts cache out",
     "typechain": "hardhat typechain",
     "prepare": "husky install || true"
   },

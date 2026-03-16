@@ -10,6 +10,13 @@ const MARKETS = [
   { marketId: 2, symbol: "SOL" },
   { marketId: 3, symbol: "AVAX" },
   { marketId: 4, symbol: "LINK" },
+  { marketId: 5, symbol: "TSLA" },
+  { marketId: 6, symbol: "NVDA" },
+  { marketId: 7, symbol: "NAS100" },
+  { marketId: 8, symbol: "XAU" },
+  { marketId: 9, symbol: "SPX500" },
+  { marketId: 10, symbol: "GOOGL" },
+
 ];
 
 // ============================================================

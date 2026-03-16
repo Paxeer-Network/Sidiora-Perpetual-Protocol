@@ -38,21 +38,30 @@ contract OracleFacet {
         AppStorage storage s = appStorage();
         uint256 ts = block.timestamp;
 
+        uint256 maxDevBps = s.maxPriceDeviationBps;
+        uint256 maxHistLen = s.maxPriceHistoryLength;
+        if (maxHistLen == 0) maxHistLen = 1000; // default cap
+
         for (uint256 i; i < _marketIds.length; i++) {
             uint256 marketId = _marketIds[i];
             uint256 price = _prices[i];
             require(price > 0, "Oracle: zero price");
             require(bytes(s.markets[marketId].symbol).length > 0, "Oracle: market does not exist");
 
+            // Deviation check: reject if price moved too far from last known price
+            uint256 lastPrice = s.latestPrice[marketId];
+            if (lastPrice > 0 && maxDevBps > 0) {
+                uint256 delta = price > lastPrice ? price - lastPrice : lastPrice - price;
+                uint256 deviationBps = (delta * 10000) / lastPrice;
+                require(deviationBps <= maxDevBps, "Oracle: price deviation exceeds max");
+            }
+
             // Update latest price
             s.latestPrice[marketId] = price;
             s.latestPriceTimestamp[marketId] = ts;
 
-            // Append to price history (rolling window — older entries can be pruned off-chain)
-            s.priceHistory[marketId].push(PricePoint({
-                price: price,
-                timestamp: ts
-            }));
+            // Append to price history (TWAP iteration is bounded in LibTWAP)
+            s.priceHistory[marketId].push(PricePoint({price: price, timestamp: ts}));
         }
 
         emit PricesUpdated(_marketIds, _prices, ts);

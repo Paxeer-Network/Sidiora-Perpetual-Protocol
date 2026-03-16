@@ -6,33 +6,82 @@ require("dotenv").config({ path: __dirname + "/.env" });
 // marketId corresponds to the on-chain market ID from MarketRegistryFacet
 // pythId is the Pyth Network price feed ID (Hermes)
 
-const MARKETS = [
+// ── Pyth-sourced markets (crypto) ──────────────────────────────────
+const PYTH_MARKETS = [
   {
     marketId: 0,
     symbol: "BTC",
+    source: "pyth",
     pythId: "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
   },
   {
     marketId: 1,
     symbol: "ETH",
+    source: "pyth",
     pythId: "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
   },
   {
     marketId: 2,
     symbol: "SOL",
+    source: "pyth",
     pythId: "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
   },
   {
     marketId: 3,
     symbol: "AVAX",
+    source: "pyth",
     pythId: "0x93da3352f9f1d105fdfe4971cfa80e9dd777bfc5d0f683ebb6e1294b92137bb7",
   },
   {
     marketId: 4,
     symbol: "LINK",
+    source: "pyth",
     pythId: "0x8ac0c70fff57e9aefdf5edf44b51d62c2d433653cbb2cf5cc06bb115af04d221",
   },
 ];
+
+// ── Orderly-sourced markets (stocks, indices, commodities) ────────
+const ORDERLY_MARKETS = [
+  {
+    marketId: 5,
+    symbol: "TSLA",
+    source: "orderly",
+    orderlySymbol: "PERP_TSLA_USDC",
+  },
+  {
+    marketId: 6,
+    symbol: "NVDA",
+    source: "orderly",
+    orderlySymbol: "PERP_NVDA_USDC",
+  },
+  {
+    marketId: 7,
+    symbol: "NAS100",
+    source: "orderly",
+    orderlySymbol: "PERP_NAS100_USDC",
+  },
+  {
+    marketId: 8,
+    symbol: "XAU",
+    source: "orderly",
+    orderlySymbol: "PERP_XAU_USDC",
+  },
+  {
+    marketId: 9,
+    symbol: "SPX500",
+    source: "orderly",
+    orderlySymbol: "PERP_SPX500_USDC",
+  },
+  {
+    marketId: 10,
+    symbol: "GOOGL",
+    source: "orderly",
+    orderlySymbol: "PERP_GOOGL_USDC",
+  },
+];
+
+// Combined list for backward compatibility
+const MARKETS = [...PYTH_MARKETS, ...ORDERLY_MARKETS];
 
 // ============================================================
 //  NODE CONFIGURATION
@@ -41,6 +90,9 @@ const MARKETS = [
 const CONFIG = {
   // Pyth Hermes endpoint (mainnet)
   pythHermesUrl: process.env.PYTH_HERMES_URL || "https://hermes.pyth.network",
+
+  // Orderly Network public API (no auth needed)
+  orderlyBaseUrl: process.env.ORDERLY_BASE_URL || "https://api-evm.orderly.org",
 
   // Paxeer Network RPC
   rpcUrl: process.env.RPC_URL || "https://public-rpc.paxeer.app/rpc",
@@ -80,4 +132,4 @@ const ORACLE_ABI = [
   "function isPriceStale(uint256 _marketId) external view returns (bool)",
 ];
 
-module.exports = { MARKETS, CONFIG, ORACLE_ABI };
+module.exports = { MARKETS, PYTH_MARKETS, ORDERLY_MARKETS, CONFIG, ORACLE_ABI };

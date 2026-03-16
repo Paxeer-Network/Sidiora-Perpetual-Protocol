@@ -14,6 +14,7 @@ skills_required:
   - quant-analyst (optional)
   - risk-manager (optional)
 checkpoints: true
+auto_execution_mode: 2
 ---
 
 # DeFi Protocol Development Workflow

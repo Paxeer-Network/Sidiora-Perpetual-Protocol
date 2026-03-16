@@ -7,6 +7,8 @@ import {PricePoint} from "../storage/AppStorage.sol";
 /// @dev Pure math for computing TWAP over a configurable time window
 ///      from an array of PricePoint observations. No external dependencies.
 library LibTWAP {
+    uint256 internal constant MAX_TWAP_ITERATIONS = 1000;
+
     /// @notice Calculate TWAP from a price history array over a time window
     /// @param _priceHistory Array of PricePoint (price, timestamp), assumed chronologically ordered
     /// @param _windowSeconds The TWAP window duration in seconds (e.g., 900 = 15 min)
@@ -28,8 +30,9 @@ library LibTWAP {
         uint256 weightedSum;
         uint256 totalWeight;
 
-        // Walk backwards through history, accumulating time-weighted prices
-        for (uint256 i = len; i > 0; i--) {
+        // Walk backwards through history, bounded to MAX_TWAP_ITERATIONS entries
+        uint256 startIdx = len > MAX_TWAP_ITERATIONS ? len - MAX_TWAP_ITERATIONS : 0;
+        for (uint256 i = len; i > startIdx; i--) {
             PricePoint storage point = _priceHistory[i - 1];
 
             // Skip points older than window

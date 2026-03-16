@@ -76,15 +76,16 @@ contract CentralVaultFacet {
     }
 
     /// @notice Get the utilization ratio of the vault for a token
-    /// @dev Utilization = total locked in positions / total vault balance
+    /// @dev Utilization = (tracked balance - actual on-chain balance) / tracked balance
+    ///      Represents the fraction of vault funds currently deployed in active payouts.
     /// @param _token The token address
     /// @return utilizationBps Utilization in basis points (0-10000)
     function getUtilization(address _token) external view returns (uint256 utilizationBps) {
         AppStorage storage s = appStorage();
-        uint256 balance = s.vaultBalances[_token];
-        if (balance == 0) return 0;
-        uint256 actualBalance = IERC20(_token).balanceOf(address(this));
-        uint256 locked = balance > actualBalance ? balance - actualBalance : 0;
-        utilizationBps = (locked * 10000) / balance;
+        uint256 tracked = s.vaultBalances[_token];
+        if (tracked == 0) return 0;
+        uint256 actual = IERC20(_token).balanceOf(address(this));
+        if (actual >= tracked) return 0;
+        utilizationBps = ((tracked - actual) * 10000) / tracked;
     }
 }

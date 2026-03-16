@@ -83,6 +83,13 @@ contract FundingRateFacet {
             }
         }
 
+        // Clamp funding rate to configured max (if set)
+        int256 maxRate = s.maxFundingRatePerSecond;
+        if (maxRate > 0) {
+            if (ratePerSecond > maxRate) ratePerSecond = maxRate;
+            if (ratePerSecond < -maxRate) ratePerSecond = -maxRate;
+        }
+
         fs.currentFundingRatePerSecond = ratePerSecond;
 
         emit FundingRateUpdated(_marketId, ratePerSecond, fundingRate24h);

@@ -139,6 +139,14 @@ struct AppStorage {
     uint256 takerFeeBps;
     uint256 liquidationFeeBps;
     uint256 insuranceFeeBps;
+
+    // ── Robustness Parameters (appended — safe for Diamond upgrade) ──
+    uint256 maxPriceDeviationBps;           // Max single-update price move (bps, e.g., 5000 = 50%)
+    uint256 minPositionSizeUsd;             // Minimum position notional (18 dec, e.g., 10e18 = $10)
+    uint256 minOrderSizeUsd;                // Minimum order notional (18 dec)
+    int256 maxFundingRatePerSecond;          // Absolute cap on funding rate per second (18 dec)
+    uint256 maxPriceHistoryLength;          // Circular buffer cap per market (e.g., 1000)
+    mapping(address => uint256) collateralPriceFeeds; // token → marketId for stablecoin price (0 = assume $1)
 }
 
 // ============================================================

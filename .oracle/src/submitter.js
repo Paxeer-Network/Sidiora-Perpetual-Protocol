@@ -1,5 +1,8 @@
 const { ethers } = require("ethers");
 
+const TX_WAIT_TIMEOUT_MS = 30_000; // 30s max wait for tx confirmation
+const RPC_TIMEOUT_MS = 15_000;     // 15s max for any RPC call
+
 /**
  * Submits prices on-chain to the OracleFacet via batchUpdatePrices().
  *
@@ -9,6 +12,7 @@ class OnChainSubmitter {
   constructor(config, oracleAbi, logger) {
     this.config = config;
     this.logger = logger;
+    this._oracleAbi = oracleAbi;
     this.submittedPrices = new Map(); // symbol → last submitted price (18 dec bigint)
     this.stats = {
       totalSubmissions: 0,
@@ -18,14 +22,25 @@ class OnChainSubmitter {
       lastTxHash: null,
     };
 
-    // Setup provider + wallet
-    this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-    this.wallet = new ethers.Wallet(config.privateKey, this.provider);
-    this.oracle = new ethers.Contract(config.diamondAddress, oracleAbi, this.wallet);
+    // Setup provider + wallet (with RPC timeout)
+    this._initProvider();
 
     this.logger.info(`Submitter initialized`);
     this.logger.info(`  Wallet:  ${this.wallet.address}`);
     this.logger.info(`  Diamond: ${config.diamondAddress}`);
+  }
+
+  /**
+   * (Re-)create provider, wallet, and contract instances.
+   * Called on init and after a hung RPC connection.
+   */
+  _initProvider() {
+    this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl, undefined, {
+      staticNetwork: true,
+      batchMaxCount: 1,
+    });
+    this.wallet = new ethers.Wallet(this.config.privateKey, this.provider);
+    this.oracle = new ethers.Contract(this.config.diamondAddress, this._oracleAbi, this.wallet);
   }
 
   /**
@@ -63,7 +78,7 @@ class OnChainSubmitter {
 
         this.logger.info(`  TX sent: ${tx.hash} (attempt ${attempt})`);
 
-        const receipt = await tx.wait();
+        const receipt = await this._waitWithTimeout(tx, TX_WAIT_TIMEOUT_MS);
 
         // Update stats
         this.stats.totalSubmissions++;
@@ -133,6 +148,25 @@ class OnChainSubmitter {
     }
 
     return results;
+  }
+
+  /**
+   * Wait for tx confirmation with a timeout.
+   * If it times out, recreate the provider to avoid a permanently hung connection.
+   */
+  async _waitWithTimeout(tx, timeoutMs) {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`tx.wait timed out after ${timeoutMs}ms (hash=${tx.hash})`)), timeoutMs)
+    );
+    try {
+      return await Promise.race([tx.wait(), timeout]);
+    } catch (err) {
+      if (err.message.includes('timed out')) {
+        this.logger.warn(`  RPC hang detected — recreating provider`);
+        this._initProvider();
+      }
+      throw err;
+    }
   }
 
   /**

@@ -3,12 +3,14 @@ pragma solidity ^0.8.27;
 
 import {AppStorage, Position, Market, MarketOI, FundingState, VirtualPool, appStorage} from "../../storage/AppStorage.sol";
 import {LibReentrancyGuard} from "../../libraries/LibReentrancyGuard.sol";
+import {LibAccessControl} from "../../libraries/LibAccessControl.sol";
+import {LibDiamond} from "../../libraries/LibDiamond.sol";
 import {LibSafeERC20} from "../../libraries/LibSafeERC20.sol";
 import {LibPosition} from "../../libraries/LibPosition.sol";
 import {LibFee} from "../../libraries/LibFee.sol";
 import {LibMath} from "../../libraries/LibMath.sol";
 import {LibEvents} from "../../libraries/LibEvents.sol";
-import {IUserVault} from "../../interfaces/IUserVault.sol";
+import {ITradingAccount} from "../../interfaces/ITradingAccount.sol";
 
 /// @title LiquidationFacet - Position liquidation and auto-deleveraging
 /// @dev Anyone can call liquidate() (keeper incentive model).
@@ -96,7 +98,7 @@ contract LiquidationFacet {
                         ? s.vaultBalances[pos.collateralToken] - userRemainder
                         : 0;
                     LibSafeERC20.safeTransfer(pos.collateralToken, vault, userRemainder);
-                    IUserVault(vault).receiveCollateral(pos.collateralToken, userRemainder);
+                    ITradingAccount(vault).unlockFromPosition(pos.collateralToken, userRemainder, _positionId);
                 }
             }
         } else {
@@ -123,10 +125,10 @@ contract LiquidationFacet {
     //                   VIEW FUNCTIONS
     // ============================================================
 
-    /// @notice Check if a position is liquidatable
+    /// @notice Check if a position is liquidatable (accounts for pending funding)
     /// @param _positionId The position to check
     /// @return liquidatable True if margin < maintenance
-    /// @return marginBps Current margin ratio in basis points
+    /// @return marginBps Current margin ratio in basis points (funding-adjusted)
     function checkLiquidatable(uint256 _positionId) external view returns (bool liquidatable, uint256 marginBps) {
         AppStorage storage s = appStorage();
         Position storage pos = s.positions[_positionId];
@@ -135,9 +137,39 @@ contract LiquidationFacet {
         uint256 currentPrice = s.latestPrice[pos.marketId];
         if (currentPrice == 0) return (false, 0);
 
-        marginBps = LibPosition.calculateMarginRatio(pos, currentPrice);
+        // Compute pending funding to get accurate margin
+        int256 pendingFunding = _computePendingFunding(s, pos);
+        int256 pnl = LibPosition.calculatePnl(pos, currentPrice);
+
+        // Adjusted equity = collateral + pnl - fundingOwed
+        int256 adjustedEquity = int256(pos.collateralUsd) + pnl - pendingFunding;
+
+        if (adjustedEquity <= 0 || pos.sizeUsd == 0) {
+            return (true, 0);
+        }
+        marginBps = (uint256(adjustedEquity) * 10000) / pos.sizeUsd;
+
         Market storage market = s.markets[pos.marketId];
         liquidatable = marginBps < market.maintenanceMarginBps;
+    }
+
+    /// @dev Compute pending funding payment for a position (view-only, no state mutation)
+    function _computePendingFunding(AppStorage storage s, Position storage pos) internal view returns (int256) {
+        FundingState storage fs = s.fundingStates[pos.marketId];
+        uint256 elapsed = block.timestamp > fs.lastUpdateTimestamp
+            ? block.timestamp - fs.lastUpdateTimestamp
+            : 0;
+        int256 pendingAccrual = fs.currentFundingRatePerSecond * int256(elapsed);
+
+        int256 currentCumulative;
+        if (pos.isLong) {
+            currentCumulative = fs.cumulativeFundingPerUnitLong + pendingAccrual;
+        } else {
+            currentCumulative = fs.cumulativeFundingPerUnitShort - pendingAccrual;
+        }
+
+        int256 fundingDelta = currentCumulative - pos.lastFundingIndex;
+        return LibMath.mulFpSigned(int256(pos.sizeUsd), fundingDelta);
     }
 
     // ============================================================
@@ -152,11 +184,10 @@ contract LiquidationFacet {
         LibReentrancyGuard.nonReentrantBefore();
         AppStorage storage s = appStorage();
 
-        // Only keeper or owner can trigger ADL
+        // Only keeper or diamond owner can trigger ADL
         require(
-            LibMath.toUint256(1) == 1 && // placeholder — real check below
-            (msg.sender == _getOwner() ||
-             s.roles[keccak256("KEEPER")][msg.sender]),
+            LibAccessControl.hasRole(LibAccessControl.KEEPER_ROLE, msg.sender) ||
+            msg.sender == LibDiamond.contractOwner(),
             "Liquidation: not authorized for ADL"
         );
 
@@ -196,7 +227,7 @@ contract LiquidationFacet {
                 ? s.vaultBalances[pos.collateralToken] - payout
                 : 0;
             LibSafeERC20.safeTransfer(pos.collateralToken, vault, payout);
-            IUserVault(vault).receiveCollateral(pos.collateralToken, payout);
+            ITradingAccount(vault).unlockFromPosition(pos.collateralToken, payout, _positionId);
         }
 
         // If position size is now 0, deactivate
@@ -236,9 +267,14 @@ contract LiquidationFacet {
         int256 fundingPayment = LibMath.mulFpSigned(int256(pos.sizeUsd), fundingDelta);
 
         if (fundingPayment > 0) {
+            // Position owes funding — deduct from collateral
             uint256 owed = uint256(fundingPayment);
             uint256 owedTokens = _usdToTokens(s, pos.collateralToken, owed);
-            if (owedTokens < pos.collateralAmount) {
+            if (owedTokens >= pos.collateralAmount) {
+                // Funding exceeds collateral — drain to zero (position becomes liquidatable)
+                pos.collateralAmount = 0;
+                pos.collateralUsd = 0;
+            } else {
                 pos.collateralAmount -= owedTokens;
                 pos.collateralUsd = pos.collateralUsd > owed ? pos.collateralUsd - owed : 0;
             }
@@ -278,15 +314,4 @@ contract LiquidationFacet {
         return _usdAmount;
     }
 
-    function _getOwner() internal view returns (address) {
-        bytes32 position = keccak256("diamond.standard.diamond.storage");
-        address owner;
-        assembly {
-            // DiamondStorage.contractOwner is at slot offset 4 (after mappings + array)
-            // Actually we need to read from the diamond storage properly
-            owner := sload(add(position, 4))
-        }
-        // Fallback: read from LibDiamond directly
-        return owner;
-    }
 }

@@ -9,7 +9,7 @@ import {LibPosition} from "../../libraries/LibPosition.sol";
 import {LibFee} from "../../libraries/LibFee.sol";
 import {LibMath} from "../../libraries/LibMath.sol";
 import {LibEvents} from "../../libraries/LibEvents.sol";
-import {IUserVault} from "../../interfaces/IUserVault.sol";
+import {ITradingAccount} from "../../interfaces/ITradingAccount.sol";
 
 /// @title OrderBookFacet - On-chain limit and stop-limit order storage
 /// @dev Orders are stored on-chain with trigger conditions.
@@ -18,6 +18,8 @@ import {IUserVault} from "../../interfaces/IUserVault.sol";
 contract OrderBookFacet {
     uint8 constant ORDER_TYPE_LIMIT = 0;
     uint8 constant ORDER_TYPE_STOP_LIMIT = 1;
+    uint8 constant ORDER_TYPE_TAKE_PROFIT = 2;
+    uint8 constant ORDER_TYPE_STOP_LOSS = 3;
 
     // ============================================================
     //                    USER FUNCTIONS
@@ -73,6 +75,28 @@ contract OrderBookFacet {
             _triggerPrice, _limitPrice,
             _sizeUsd, _leverage, _collateralToken, _collateralAmount
         );
+    }
+
+    /// @notice Place a take-profit close order on an existing position
+    /// @param _positionId The position to close when trigger hits
+    /// @param _triggerPrice Price that activates the TP (18 dec)
+    /// @return orderId The ID of the new order
+    function placeTakeProfitOrder(
+        uint256 _positionId,
+        uint256 _triggerPrice
+    ) external returns (uint256 orderId) {
+        return _placeCloseOrder(_positionId, _triggerPrice, ORDER_TYPE_TAKE_PROFIT);
+    }
+
+    /// @notice Place a stop-loss close order on an existing position
+    /// @param _positionId The position to close when trigger hits
+    /// @param _triggerPrice Price that activates the SL (18 dec)
+    /// @return orderId The ID of the new order
+    function placeStopLossOrder(
+        uint256 _positionId,
+        uint256 _triggerPrice
+    ) external returns (uint256 orderId) {
+        return _placeCloseOrder(_positionId, _triggerPrice, ORDER_TYPE_STOP_LOSS);
     }
 
     /// @notice Cancel an active order
@@ -131,10 +155,10 @@ contract OrderBookFacet {
         Market storage market = s.markets[order.marketId];
         require(market.enabled, "OrderBook: market not enabled");
 
-        // Lock collateral from user vault
+        // Lock collateral from trading account
         address vault = s.userVaults[order.user];
         require(vault != address(0), "OrderBook: no vault");
-        IUserVault(vault).lockCollateral(order.collateralToken, order.collateralAmount, address(this));
+        ITradingAccount(vault).lockForPosition(order.collateralToken, order.collateralAmount, positionId, order.marketId, order.isLong, address(this));
         s.vaultBalances[order.collateralToken] += order.collateralAmount;
 
         // Normalize collateral
@@ -209,8 +233,12 @@ contract OrderBookFacet {
         s.userPositionIds[order.user].push(positionId);
         s.userMarketPosition[order.user][order.marketId] = positionId;
 
-        // Update OI
+        // Check and update OI
         MarketOI storage oi = s.openInterest[order.marketId];
+        {
+            uint256 newOI = order.isLong ? oi.longOI + order.sizeUsd : oi.shortOI + order.sizeUsd;
+            require(newOI <= market.maxOpenInterest, "OrderBook: exceeds max open interest");
+        }
         if (order.isLong) {
             oi.longOI += order.sizeUsd;
         } else {
@@ -290,6 +318,9 @@ contract OrderBookFacet {
         require(_sizeUsd > 0, "OrderBook: zero size");
         require(_leverage > 0, "OrderBook: zero leverage");
         require(_collateralAmount > 0, "OrderBook: zero collateral");
+        if (s.minOrderSizeUsd > 0) {
+            require(_sizeUsd >= s.minOrderSizeUsd, "OrderBook: below minimum order size");
+        }
         require(s.userVaults[msg.sender] != address(0), "OrderBook: create vault first");
 
         // Validate leverage
@@ -325,22 +356,66 @@ contract OrderBookFacet {
         emit LibEvents.OrderPlaced(orderId, msg.sender, _marketId, _orderType, _isLong, _triggerPrice, _sizeUsd);
     }
 
+    function _placeCloseOrder(
+        uint256 _positionId,
+        uint256 _triggerPrice,
+        uint8 _orderType
+    ) internal returns (uint256 orderId) {
+        AppStorage storage s = appStorage();
+        require(!s.globalPaused, "OrderBook: protocol paused");
+        require(_triggerPrice > 0, "OrderBook: zero trigger price");
+
+        Position storage pos = s.positions[_positionId];
+        require(pos.active, "OrderBook: position not active");
+        require(pos.user == msg.sender, "OrderBook: not position owner");
+
+        orderId = ++s.nextOrderId;
+        s.orders[orderId] = Order({
+            user: msg.sender,
+            marketId: pos.marketId,
+            isLong: pos.isLong,
+            orderType: _orderType,
+            triggerPrice: _triggerPrice,
+            limitPrice: _triggerPrice,
+            sizeUsd: pos.sizeUsd,
+            leverage: 0,
+            collateralToken: pos.collateralToken,
+            collateralAmount: 0,
+            active: true
+        });
+        s.userOrderIds[msg.sender].push(orderId);
+
+        emit LibEvents.OrderPlaced(orderId, msg.sender, pos.marketId, _orderType, pos.isLong, _triggerPrice, pos.sizeUsd);
+    }
+
     function _validateTriggerCondition(Order storage _order, uint256 _currentPrice) internal view {
         if (_order.orderType == ORDER_TYPE_LIMIT) {
-            // Limit buy (long): trigger when price <= triggerPrice
-            // Limit sell (short): trigger when price >= triggerPrice
             if (_order.isLong) {
                 require(_currentPrice <= _order.triggerPrice, "OrderBook: limit long not triggered");
             } else {
                 require(_currentPrice >= _order.triggerPrice, "OrderBook: limit short not triggered");
             }
         } else if (_order.orderType == ORDER_TYPE_STOP_LIMIT) {
-            // Stop-limit buy: trigger when price >= triggerPrice (breakout)
-            // Stop-limit sell: trigger when price <= triggerPrice (breakdown)
             if (_order.isLong) {
                 require(_currentPrice >= _order.triggerPrice, "OrderBook: stop long not triggered");
             } else {
                 require(_currentPrice <= _order.triggerPrice, "OrderBook: stop short not triggered");
+            }
+        } else if (_order.orderType == ORDER_TYPE_TAKE_PROFIT) {
+            // TP on long: close when price >= trigger (take profit at high)
+            // TP on short: close when price <= trigger (take profit at low)
+            if (_order.isLong) {
+                require(_currentPrice >= _order.triggerPrice, "OrderBook: TP long not triggered");
+            } else {
+                require(_currentPrice <= _order.triggerPrice, "OrderBook: TP short not triggered");
+            }
+        } else if (_order.orderType == ORDER_TYPE_STOP_LOSS) {
+            // SL on long: close when price <= trigger (stop loss on drop)
+            // SL on short: close when price >= trigger (stop loss on rise)
+            if (_order.isLong) {
+                require(_currentPrice <= _order.triggerPrice, "OrderBook: SL long not triggered");
+            } else {
+                require(_currentPrice >= _order.triggerPrice, "OrderBook: SL short not triggered");
             }
         }
     }

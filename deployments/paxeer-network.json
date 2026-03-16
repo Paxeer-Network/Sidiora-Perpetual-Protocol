@@ -400,5 +400,67 @@
       }
     ],
     "timestamp": "2026-02-11T22:59:22.216Z"
-  }
+  },
+  "markets": [
+    {
+      "marketId": 5,
+      "name": "Tesla",
+      "symbol": "TSLA",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$5,000,000",
+      "initialPrice": "$426.21",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 6,
+      "name": "NVIDIA",
+      "symbol": "NVDA",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$187.66",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 7,
+      "name": "Nasdaq 100",
+      "symbol": "NAS100",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$25195.0",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 8,
+      "name": "Gold",
+      "symbol": "XAU",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$5072.5",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 9,
+      "name": "S&P 500",
+      "symbol": "SPX500",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$6943.33",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 10,
+      "name": "Alphabet",
+      "symbol": "GOOGL",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$5,000,000",
+      "initialPrice": "$311.84",
+      "addedAt": "2026-02-12T09:54:04.108Z"
+    }
+  ]
 }

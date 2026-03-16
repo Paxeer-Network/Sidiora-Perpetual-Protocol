@@ -91,7 +91,7 @@ async function main() {
         from = to + 1;
       } catch (err) {
         logger.error(`Scan error at ${from}-${to}: ${err.message}`);
-        await sleep(5000);
+        await sleep(1000);
       }
     }
 

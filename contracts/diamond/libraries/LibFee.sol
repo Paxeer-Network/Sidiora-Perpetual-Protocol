@@ -14,7 +14,8 @@ library LibFee {
     function calculateTradingFee(uint256 _sizeUsd, bool _isMaker) internal view returns (uint256 fee) {
         AppStorage storage s = appStorage();
         uint256 feeBps = _isMaker ? s.makerFeeBps : s.takerFeeBps;
-        fee = (_sizeUsd * feeBps) / 10000;
+        // Round UP to prevent zero-fee dust trades
+        fee = (_sizeUsd * feeBps + 9999) / 10000;
     }
 
     /// @notice Calculate the liquidation penalty

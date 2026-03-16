@@ -9,7 +9,7 @@ import {LibPosition} from "../../libraries/LibPosition.sol";
 import {LibFee} from "../../libraries/LibFee.sol";
 import {LibMath} from "../../libraries/LibMath.sol";
 import {LibEvents} from "../../libraries/LibEvents.sol";
-import {IUserVault} from "../../interfaces/IUserVault.sol";
+import {ITradingAccount} from "../../interfaces/ITradingAccount.sol";
 import {IERC20} from "../../interfaces/IERC20.sol";
 
 /// @title PositionFacet - Position lifecycle: open, modify, close
@@ -56,8 +56,11 @@ contract PositionFacet {
         uint256 collateralUsd = _normalizeToUsd(s, _collateralToken, _collateralAmount);
         require(collateralUsd > 0, "Position: zero collateral value");
 
-        // Validate leverage
+        // Validate leverage and minimum size
         uint256 sizeUsd = LibMath.mulFp(collateralUsd, _leverage);
+        if (s.minPositionSizeUsd > 0) {
+            require(sizeUsd >= s.minPositionSizeUsd, "Position: below minimum size");
+        }
         LibPosition.validateLeverage(sizeUsd, collateralUsd, market.maxLeverage);
 
         // Check OI cap
@@ -77,8 +80,8 @@ contract PositionFacet {
         address vault = s.userVaults[msg.sender];
         require(vault != address(0), "Position: create vault first");
 
-        // Lock collateral: UserVault → Diamond (CentralVault)
-        IUserVault(vault).lockCollateral(_collateralToken, _collateralAmount, address(this));
+        // Lock collateral: TradingAccount → Diamond (CentralVault)
+        ITradingAccount(vault).lockForPosition(_collateralToken, _collateralAmount, positionId, _marketId, _isLong, address(this));
         s.vaultBalances[_collateralToken] += _collateralAmount;
 
         // Calculate and deduct trading fee
@@ -151,11 +154,64 @@ contract PositionFacet {
         require(_amount > 0, "Position: zero amount");
 
         address vault = s.userVaults[msg.sender];
-        IUserVault(vault).lockCollateral(pos.collateralToken, _amount, address(this));
+        ITradingAccount(vault).lockForPosition(pos.collateralToken, _amount, _positionId, pos.marketId, pos.isLong, address(this));
         s.vaultBalances[pos.collateralToken] += _amount;
 
         pos.collateralAmount += _amount;
         pos.collateralUsd += _normalizeToUsd(s, pos.collateralToken, _amount);
+
+        LibReentrancyGuard.nonReentrantAfter();
+
+        emit LibEvents.PositionModified(_positionId, pos.sizeUsd, pos.collateralUsd, pos.collateralAmount);
+    }
+
+    // ============================================================
+    //                  REMOVE COLLATERAL
+    // ============================================================
+
+    /// @notice Remove excess collateral from an existing position (increase leverage)
+    /// @dev Position must remain above maintenance margin after withdrawal.
+    /// @param _positionId The position to modify
+    /// @param _amount Collateral amount to withdraw (in position's collateral token)
+    function removeCollateral(uint256 _positionId, uint256 _amount) external {
+        LibReentrancyGuard.nonReentrantBefore();
+        AppStorage storage s = appStorage();
+
+        Position storage pos = s.positions[_positionId];
+        require(pos.active, "Position: not active");
+        require(pos.user == msg.sender, "Position: not owner");
+        require(_amount > 0 && _amount < pos.collateralAmount, "Position: invalid withdraw amount");
+        _enforcePriceNotStale(s, pos.marketId);
+
+        // Settle funding before modifying collateral
+        _settleFundingForPosition(s, pos);
+
+        uint256 amountUsd = _normalizeToUsd(s, pos.collateralToken, _amount);
+        uint256 newCollateralUsd = pos.collateralUsd > amountUsd ? pos.collateralUsd - amountUsd : 0;
+        require(newCollateralUsd > 0, "Position: cannot withdraw all collateral");
+
+        // Check that remaining collateral keeps position above maintenance margin
+        Market storage market = s.markets[pos.marketId];
+        uint256 currentPrice = s.latestPrice[pos.marketId];
+
+        // Temporarily compute new margin ratio
+        uint256 newCollateralAmount = pos.collateralAmount - _amount;
+        int256 pnl = LibPosition.calculatePnl(pos, currentPrice);
+        int256 equity = int256(newCollateralUsd) + pnl;
+        require(equity > 0, "Position: withdrawal would make equity negative");
+        uint256 marginBps = (uint256(equity) * 10000) / pos.sizeUsd;
+        // Require margin stays above 2x maintenance margin for safety buffer
+        require(marginBps >= market.maintenanceMarginBps * 2, "Position: margin too low after withdrawal");
+
+        // Also validate leverage doesn't exceed max
+        LibPosition.validateLeverage(pos.sizeUsd, newCollateralUsd, market.maxLeverage);
+
+        // Apply withdrawal
+        pos.collateralAmount = newCollateralAmount;
+        pos.collateralUsd = newCollateralUsd;
+
+        // Transfer from central vault to user vault
+        _payoutToVault(s, msg.sender, pos.collateralToken, _amount);
 
         LibReentrancyGuard.nonReentrantAfter();
 
@@ -191,7 +247,7 @@ contract PositionFacet {
 
         // Lock additional collateral
         address vault = s.userVaults[msg.sender];
-        IUserVault(vault).lockCollateral(pos.collateralToken, _additionalCollateral, address(this));
+        ITradingAccount(vault).lockForPosition(pos.collateralToken, _additionalCollateral, _positionId, pos.marketId, pos.isLong, address(this));
         s.vaultBalances[pos.collateralToken] += _additionalCollateral;
 
         // Fee on additional size
@@ -241,6 +297,11 @@ contract PositionFacet {
         require(pos.active, "Position: not active");
         require(pos.user == msg.sender, "Position: not owner");
         require(_closeSizeUsd > 0 && _closeSizeUsd < pos.sizeUsd, "Position: invalid close size");
+        // Prevent dust positions: if remainder would be below minimum, reject partial (user should full close)
+        uint256 remainingSize = pos.sizeUsd - _closeSizeUsd;
+        if (s.minPositionSizeUsd > 0 && remainingSize > 0) {
+            require(remainingSize >= s.minPositionSizeUsd, "Position: remaining size below minimum, use full close");
+        }
         _enforcePriceNotStale(s, pos.marketId);
 
         // Settle funding
@@ -512,10 +573,14 @@ contract PositionFacet {
 
         // Apply to collateral
         if (fundingPayment > 0) {
-            // Position owes funding
+            // Position owes funding — deduct from collateral
             uint256 owed = uint256(fundingPayment);
             uint256 owedTokens = _usdToTokens(s, pos.collateralToken, owed);
-            if (owedTokens < pos.collateralAmount) {
+            if (owedTokens >= pos.collateralAmount) {
+                // Funding exceeds collateral — drain to zero (position becomes liquidatable)
+                pos.collateralAmount = 0;
+                pos.collateralUsd = 0;
+            } else {
                 pos.collateralAmount -= owedTokens;
                 pos.collateralUsd = pos.collateralUsd > owed ? pos.collateralUsd - owed : 0;
             }
@@ -528,6 +593,11 @@ contract PositionFacet {
         }
 
         pos.lastFundingIndex = currentIndex;
+
+        // Emit funding event for indexer visibility
+        if (fundingPayment != 0) {
+            emit LibEvents.FundingSettled(pos.marketId, fundingPayment, int256(0), int256(0));
+        }
     }
 
     function _calculatePayout(
@@ -573,7 +643,7 @@ contract PositionFacet {
         // Transfer tokens to user vault
         LibSafeERC20.safeTransfer(_token, vault, _amount);
 
-        // Notify vault to update locked balance accounting
-        IUserVault(vault).receiveCollateral(_token, _amount);
+        // Notify trading account to update locked balance accounting
+        ITradingAccount(vault).unlockFromPosition(_token, _amount, 0);
     }
 }

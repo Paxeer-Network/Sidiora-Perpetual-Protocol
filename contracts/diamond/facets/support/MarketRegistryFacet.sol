@@ -180,4 +180,52 @@ contract MarketRegistryFacet {
         AppStorage storage s = appStorage();
         return (s.takerFeeBps, s.makerFeeBps, s.liquidationFeeBps, s.insuranceFeeBps);
     }
+
+    // ============================================================
+    //               ROBUSTNESS CONFIGURATION
+    // ============================================================
+
+    event RobustnessParamsUpdated(
+        uint256 maxPriceDeviationBps,
+        uint256 minPositionSizeUsd,
+        uint256 minOrderSizeUsd,
+        int256 maxFundingRatePerSecond
+    );
+
+    /// @notice Set protocol robustness parameters
+    /// @param _maxPriceDeviationBps Max single-update price move in bps (e.g., 5000 = 50%). 0 = disabled.
+    /// @param _minPositionSizeUsd Minimum position notional in USD (18 dec). 0 = disabled.
+    /// @param _minOrderSizeUsd Minimum order notional in USD (18 dec). 0 = disabled.
+    /// @param _maxFundingRatePerSecond Absolute cap on funding rate per second (18 dec). 0 = disabled.
+    function setRobustnessParams(
+        uint256 _maxPriceDeviationBps,
+        uint256 _minPositionSizeUsd,
+        uint256 _minOrderSizeUsd,
+        int256 _maxFundingRatePerSecond
+    ) external {
+        LibAccessControl.enforceRole(LibAccessControl.MARKET_ADMIN_ROLE);
+        require(_maxPriceDeviationBps <= 10000, "MarketRegistry: deviation > 100%");
+        require(_maxFundingRatePerSecond >= 0, "MarketRegistry: negative max rate");
+
+        AppStorage storage s = appStorage();
+        s.maxPriceDeviationBps = _maxPriceDeviationBps;
+        s.minPositionSizeUsd = _minPositionSizeUsd;
+        s.minOrderSizeUsd = _minOrderSizeUsd;
+        s.maxFundingRatePerSecond = _maxFundingRatePerSecond;
+
+        emit RobustnessParamsUpdated(
+            _maxPriceDeviationBps, _minPositionSizeUsd, _minOrderSizeUsd, _maxFundingRatePerSecond
+        );
+    }
+
+    /// @notice Get current robustness parameters
+    function getRobustnessParams() external view returns (
+        uint256 maxPriceDeviationBps,
+        uint256 minPositionSizeUsd,
+        uint256 minOrderSizeUsd,
+        int256 maxFundingRatePerSecond
+    ) {
+        AppStorage storage s = appStorage();
+        return (s.maxPriceDeviationBps, s.minPositionSizeUsd, s.minOrderSizeUsd, s.maxFundingRatePerSecond);
+    }
 }
