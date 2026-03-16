@@ -137,6 +137,13 @@ const READ_ABI = [
 
   // VirtualAMMFacet
   "function getPool(uint256 _marketId) external view returns (uint256 baseReserve, uint256 quoteReserve, uint256 lastSyncTimestamp, uint256 dampingFactor)",
+
+  // Events needed for on-chain fallback scanning in state-cache
+  "event OrderPlaced(uint256 indexed orderId, address indexed user, uint256 indexed marketId, uint8 orderType, bool isLong, uint256 triggerPrice, uint256 sizeUsd)",
+  "event OrderExecuted(uint256 indexed orderId, uint256 indexed positionId, uint256 executionPrice)",
+  "event OrderCancelled(uint256 indexed orderId, address indexed user)",
+  "event PositionOpened(uint256 indexed positionId, address indexed user, uint256 indexed marketId, bool isLong, uint256 sizeUsd, uint256 leverage, uint256 entryPrice, address collateralToken, uint256 collateralAmount)",
+  "event PositionClosed(uint256 indexed positionId, address indexed user, uint256 indexed marketId, uint256 closeSizeUsd, uint256 exitPrice, int256 realizedPnl, bool isFullClose)",
 ];
 
 const COMBINED_ABI = [...KEEPER_MULTICALL_ABI, ...READ_ABI];
