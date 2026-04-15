@@ -47,6 +47,9 @@ importers:
       pg:
         specifier: ^8.17.2
         version: 8.18.0
+      solidity-docgen:
+        specifier: 0.6.0-beta.36
+        version: 0.6.0-beta.36(hardhat@2.28.5(ts-node@10.9.2(@types/node@25.2.3)(typescript@5.9.3))(typescript@5.9.3))
     devDependencies:
       '@nomicfoundation/hardhat-toolbox':
         specifier: ^5.0.0
@@ -2490,6 +2493,11 @@ packages:
     hasBin: true
     peerDependencies:
       hardhat: ^2.11.0
+
+  solidity-docgen@0.6.0-beta.36:
+    resolution: {integrity: sha512-f/I5G2iJgU1h0XrrjRD0hHMr7C10u276vYvm//rw1TzFcYQ4xTOyAoi9oNAHRU0JU4mY9eTuxdVc2zahdMuhaQ==}
+    peerDependencies:
+      hardhat: ^2.8.0
 
   source-map-support@0.5.21:
     resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}
@@ -6148,6 +6156,12 @@ snapshots:
       semver: 7.7.4
       shelljs: 0.8.5
       web3-utils: 1.10.4
+
+  solidity-docgen@0.6.0-beta.36(hardhat@2.28.5(ts-node@10.9.2(@types/node@25.2.3)(typescript@5.9.3))(typescript@5.9.3)):
+    dependencies:
+      handlebars: 4.7.8
+      hardhat: 2.28.5(ts-node@10.9.2(@types/node@25.2.3)(typescript@5.9.3))(typescript@5.9.3)
+      solidity-ast: 0.4.61
 
   source-map-support@0.5.21:
     dependencies:

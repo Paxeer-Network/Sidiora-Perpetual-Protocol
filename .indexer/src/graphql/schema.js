@@ -341,6 +341,82 @@ const typeDefs = gql`
   }
 
   # ============================================================
+  #  ENRICHED STATS (on-chain + Orderly)
+  # ============================================================
+
+  type OrderlyTicker {
+    symbol: String!
+    paxeerSymbol: String!
+    mark_price: Float
+    index_price: Float
+    sum_unitary_funding: Float
+    est_funding_rate: Float
+    last_funding_rate: Float
+    next_funding_time: Float
+    open_interest: Float
+    h24_open: Float
+    h24_close: Float
+    h24_high: Float
+    h24_low: Float
+    h24_amount: Float
+    h24_volume: Float
+  }
+
+  type OrderlyVolumeStats {
+    perp_volume_ytd: Float
+    perp_volume_ltd: Float
+    perp_volume_today: Float
+    perp_volume_last_1_day: Float
+    perp_volume_last_7_days: Float
+    perp_volume_last_30_days: Float
+  }
+
+  type OrderlyPriceChange {
+    symbol: String!
+    paxeerSymbol: String!
+    last_price: Float
+    change_5m: Float
+    change_30m: Float
+    change_1h: Float
+    change_4h: Float
+    change_24h: Float
+    change_3d: Float
+    change_7d: Float
+    change_30d: Float
+  }
+
+  type OrderlyOpenInterest {
+    symbol: String!
+    paxeerSymbol: String!
+    long_oi: Float
+    short_oi: Float
+  }
+
+  type OrderlyFundingRate {
+    symbol: String!
+    paxeerSymbol: String!
+    est_funding_rate: Float
+    est_funding_rate_timestamp: Float
+    last_funding_rate: Float
+    last_funding_rate_timestamp: Float
+    next_funding_time: Float
+    sum_unitary_funding: Float
+  }
+
+  type EnrichedGlobalStats {
+    onchain: GlobalStats!
+    orderly: OrderlyVolumeStats
+  }
+
+  type EnrichedMarketStats {
+    onchain: MarketStats!
+    ticker: OrderlyTicker
+    fundingRate: OrderlyFundingRate
+    openInterest: OrderlyOpenInterest
+    priceChange: OrderlyPriceChange
+  }
+
+  # ============================================================
   #  QUERIES
   # ============================================================
 
@@ -456,6 +532,16 @@ const typeDefs = gql`
       limit: Int
       offset: Int
     ): [TradingAccountEvent!]!
+
+    # Enriched Stats (on-chain + Orderly)
+    enrichedGlobalStats: EnrichedGlobalStats!
+    enrichedMarketStats(marketId: Int!): EnrichedMarketStats!
+
+    # Orderly market data via GraphQL
+    orderlyTickers: [OrderlyTicker!]!
+    orderlyFundingRates: [OrderlyFundingRate!]!
+    orderlyPriceChanges: [OrderlyPriceChange!]!
+    orderlyOpenInterests: [OrderlyOpenInterest!]!
   }
 `;
 

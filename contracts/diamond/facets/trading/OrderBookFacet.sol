@@ -10,6 +10,7 @@ import {LibFee} from "../../libraries/LibFee.sol";
 import {LibMath} from "../../libraries/LibMath.sol";
 import {LibEvents} from "../../libraries/LibEvents.sol";
 import {ITradingAccount} from "../../interfaces/ITradingAccount.sol";
+import {IERC20} from "../../interfaces/IERC20.sol";
 
 /// @title OrderBookFacet - On-chain limit and stop-limit order storage
 /// @dev Orders are stored on-chain with trigger conditions.
@@ -109,6 +110,15 @@ contract OrderBookFacet {
 
         order.active = false;
 
+        // Release reserved collateral back to user vault (only for open orders, not TP/SL)
+        if (s.orderCollateralReserved[_orderId] && order.collateralAmount > 0) {
+            address vault = s.userVaults[msg.sender];
+            if (vault != address(0)) {
+                ITradingAccount(vault).releaseReservation(order.collateralToken, order.collateralAmount, _orderId);
+            }
+            s.orderCollateralReserved[_orderId] = false;
+        }
+
         emit LibEvents.OrderCancelled(_orderId, msg.sender);
     }
 
@@ -118,8 +128,10 @@ contract OrderBookFacet {
 
     /// @notice Execute a triggered order (called by keepers)
     /// @dev Validates trigger condition on-chain before executing.
+    ///      For LIMIT/STOP_LIMIT orders, opens a new position.
+    ///      For TAKE_PROFIT/STOP_LOSS orders, closes the existing position.
     /// @param _orderId The order to execute
-    /// @return positionId The ID of the resulting position
+    /// @return positionId The ID of the resulting position (0 for close orders)
     function executeOrder(uint256 _orderId) external returns (uint256 positionId) {
         LibAccessControl.enforceRole(LibAccessControl.KEEPER_ROLE);
         LibReentrancyGuard.nonReentrantBefore();
@@ -131,10 +143,27 @@ contract OrderBookFacet {
         require(!s.globalPaused, "OrderBook: protocol paused");
         require(!s.marketPaused[order.marketId], "OrderBook: market paused");
 
+        // Order expiry check
+        uint256 expiry = s.orderExpiry[_orderId];
+        if (expiry > 0) {
+            require(block.timestamp <= expiry, "OrderBook: order expired");
+        }
+
+        // Price staleness check
+        _enforcePriceNotStale(s, order.marketId);
+
         // Validate trigger condition
         uint256 currentPrice = s.latestPrice[order.marketId];
         require(currentPrice > 0, "OrderBook: no price");
         _validateTriggerCondition(order, currentPrice);
+
+        // Route to close path for TP/SL orders
+        if (order.orderType == ORDER_TYPE_TAKE_PROFIT || order.orderType == ORDER_TYPE_STOP_LOSS) {
+            _executeCloseOrder(s, order, _orderId, currentPrice);
+            order.active = false;
+            LibReentrancyGuard.nonReentrantAfter();
+            return 0;
+        }
 
         // Validate limit price for stop-limit orders
         if (order.orderType == ORDER_TYPE_STOP_LIMIT) {
@@ -162,38 +191,16 @@ contract OrderBookFacet {
         s.vaultBalances[order.collateralToken] += order.collateralAmount;
 
         // Normalize collateral
-        uint8 decimals = s.collateralDecimals[order.collateralToken];
-        uint256 collateralUsd;
-        if (decimals < 18) {
-            collateralUsd = order.collateralAmount * (10 ** (18 - decimals));
-        } else if (decimals > 18) {
-            collateralUsd = order.collateralAmount / (10 ** (decimals - 18));
-        } else {
-            collateralUsd = order.collateralAmount;
-        }
+        uint256 collateralUsd = _normalizeToUsd(s, order.collateralToken, order.collateralAmount);
 
         // Fee
         uint256 fee = LibFee.calculateTradingFee(order.sizeUsd, true); // maker fee for limits
-        uint256 feeTokens;
-        if (decimals < 18) {
-            feeTokens = fee / (10 ** (18 - decimals));
-        } else if (decimals > 18) {
-            feeTokens = fee * (10 ** (decimals - 18));
-        } else {
-            feeTokens = fee;
-        }
+        uint256 feeTokens = _usdToTokens(s, order.collateralToken, fee);
 
         uint256 netCollateral = order.collateralAmount > feeTokens
             ? order.collateralAmount - feeTokens
             : 0;
-        uint256 netCollateralUsd;
-        if (decimals < 18) {
-            netCollateralUsd = netCollateral * (10 ** (18 - decimals));
-        } else if (decimals > 18) {
-            netCollateralUsd = netCollateral / (10 ** (decimals - 18));
-        } else {
-            netCollateralUsd = netCollateral;
-        }
+        uint256 netCollateralUsd = _normalizeToUsd(s, order.collateralToken, netCollateral);
 
         // Insurance cut
         uint256 insuranceCut = LibFee.calculateInsuranceContribution(feeTokens);
@@ -203,18 +210,8 @@ contract OrderBookFacet {
         positionId = ++s.nextPositionId;
 
         // Accrue funding
+        _accrueFunding(s, order.marketId);
         FundingState storage fs = s.fundingStates[order.marketId];
-        if (fs.lastUpdateTimestamp > 0) {
-            uint256 elapsed = block.timestamp - fs.lastUpdateTimestamp;
-            if (elapsed > 0) {
-                int256 accrued = fs.currentFundingRatePerSecond * int256(elapsed);
-                fs.cumulativeFundingPerUnitLong += accrued;
-                fs.cumulativeFundingPerUnitShort -= accrued;
-                fs.lastUpdateTimestamp = block.timestamp;
-            }
-        } else {
-            fs.lastUpdateTimestamp = block.timestamp;
-        }
 
         s.positions[positionId] = Position({
             user: order.user,
@@ -246,19 +243,7 @@ contract OrderBookFacet {
         }
 
         // Update vAMM
-        VirtualPool storage pool = s.virtualPools[order.marketId];
-        if (pool.baseReserve > 0) {
-            uint256 k = LibMath.mulFp(pool.baseReserve, pool.quoteReserve);
-            bool addQuote = order.isLong;
-            if (addQuote) {
-                pool.quoteReserve += order.sizeUsd;
-            } else {
-                pool.quoteReserve = pool.quoteReserve > order.sizeUsd ? pool.quoteReserve - order.sizeUsd : 1;
-            }
-            if (pool.quoteReserve > 0) {
-                pool.baseReserve = LibMath.divFp(k, pool.quoteReserve);
-            }
-        }
+        _applyVirtualTrade(s, order.marketId, order.sizeUsd, order.isLong, true);
 
         // Deactivate order
         order.active = false;
@@ -296,6 +281,72 @@ contract OrderBookFacet {
 
     // ============================================================
     //                   INTERNAL HELPERS
+    // ============================================================
+
+    // ============================================================
+    //              INTERNAL: CLOSE ORDER EXECUTION
+    // ============================================================
+
+    /// @dev Execute a TP/SL close order — closes the user's existing position
+    function _executeCloseOrder(
+        AppStorage storage s,
+        Order storage order,
+        uint256 _orderId,
+        uint256 _currentPrice
+    ) internal {
+        // Find the user's active position in this market
+        uint256 posId = s.userMarketPosition[order.user][order.marketId];
+        require(posId != 0, "OrderBook: no position to close");
+
+        Position storage pos = s.positions[posId];
+        require(pos.active, "OrderBook: position already closed");
+        require(pos.isLong == order.isLong, "OrderBook: direction mismatch");
+
+        // Settle funding
+        _accrueFunding(s, pos.marketId);
+        _settleFundingForPosition(s, pos);
+
+        // Calculate PnL
+        int256 pnl = LibPosition.calculatePnl(pos, _currentPrice);
+
+        // Fee on position size
+        uint256 fee = LibFee.calculateTradingFee(pos.sizeUsd, false);
+        uint256 feeInTokens = _usdToTokens(s, pos.collateralToken, fee);
+
+        // Calculate payout
+        uint256 payout = _calculatePayout(pos.collateralAmount, pnl, feeInTokens, pos.collateralToken, s);
+
+        uint256 closedSize = pos.sizeUsd;
+
+        // Update OI
+        MarketOI storage oi = s.openInterest[pos.marketId];
+        if (pos.isLong) {
+            oi.longOI = oi.longOI > closedSize ? oi.longOI - closedSize : 0;
+        } else {
+            oi.shortOI = oi.shortOI > closedSize ? oi.shortOI - closedSize : 0;
+        }
+
+        // Reverse vAMM impact
+        _applyVirtualTrade(s, pos.marketId, closedSize, pos.isLong, false);
+
+        // Deactivate position
+        pos.active = false;
+        s.userMarketPosition[pos.user][pos.marketId] = 0;
+
+        // Transfer payout
+        if (payout > 0) {
+            _payoutToVault(s, pos.user, pos.collateralToken, payout);
+        }
+
+        emit LibEvents.OrderExecuted(_orderId, posId, _currentPrice);
+        emit LibEvents.PositionClosed(
+            posId, pos.user, pos.marketId,
+            closedSize, _currentPrice, pnl, true
+        );
+    }
+
+    // ============================================================
+    //              INTERNAL: ORDER PLACEMENT
     // ============================================================
 
     function _placeOrder(
@@ -353,6 +404,16 @@ contract OrderBookFacet {
 
         s.userOrderIds[msg.sender].push(orderId);
 
+        // Set order expiry (TTL)
+        if (s.defaultOrderTTL > 0) {
+            s.orderExpiry[orderId] = block.timestamp + s.defaultOrderTTL;
+        }
+
+        // Reserve collateral in user vault so it can't be withdrawn
+        address vault = s.userVaults[msg.sender];
+        ITradingAccount(vault).reserveForOrder(_collateralToken, _collateralAmount, orderId);
+        s.orderCollateralReserved[orderId] = true;
+
         emit LibEvents.OrderPlaced(orderId, msg.sender, _marketId, _orderType, _isLong, _triggerPrice, _sizeUsd);
     }
 
@@ -385,8 +446,170 @@ contract OrderBookFacet {
         });
         s.userOrderIds[msg.sender].push(orderId);
 
+        // Set order expiry (TTL)
+        if (s.defaultOrderTTL > 0) {
+            s.orderExpiry[orderId] = block.timestamp + s.defaultOrderTTL;
+        }
+
         emit LibEvents.OrderPlaced(orderId, msg.sender, pos.marketId, _orderType, pos.isLong, _triggerPrice, pos.sizeUsd);
     }
+
+    // ============================================================
+    //              INTERNAL: SHARED HELPERS
+    // ============================================================
+
+    function _normalizeToUsd(AppStorage storage s, address _token, uint256 _amount) internal view returns (uint256) {
+        uint8 decimals = s.collateralDecimals[_token];
+        if (decimals < 18) {
+            return _amount * (10 ** (18 - decimals));
+        } else if (decimals > 18) {
+            return _amount / (10 ** (decimals - 18));
+        }
+        return _amount;
+    }
+
+    function _usdToTokens(AppStorage storage s, address _token, uint256 _usdAmount) internal view returns (uint256) {
+        uint8 decimals = s.collateralDecimals[_token];
+        if (decimals < 18) {
+            return _usdAmount / (10 ** (18 - decimals));
+        } else if (decimals > 18) {
+            return _usdAmount * (10 ** (decimals - 18));
+        }
+        return _usdAmount;
+    }
+
+    function _enforcePriceNotStale(AppStorage storage s, uint256 _marketId) internal view {
+        uint256 maxStale = s.maxPriceStaleness;
+        if (maxStale == 0) maxStale = 120;
+        require(
+            block.timestamp <= s.latestPriceTimestamp[_marketId] + maxStale,
+            "OrderBook: price is stale"
+        );
+    }
+
+    function _accrueFunding(AppStorage storage s, uint256 _marketId) internal {
+        FundingState storage fs = s.fundingStates[_marketId];
+        if (fs.lastUpdateTimestamp == 0) {
+            fs.lastUpdateTimestamp = block.timestamp;
+            return;
+        }
+        uint256 elapsed = block.timestamp - fs.lastUpdateTimestamp;
+        if (elapsed == 0) return;
+
+        int256 accrued = fs.currentFundingRatePerSecond * int256(elapsed);
+        fs.cumulativeFundingPerUnitLong += accrued;
+        fs.cumulativeFundingPerUnitShort -= accrued;
+        fs.lastUpdateTimestamp = block.timestamp;
+    }
+
+    function _settleFundingForPosition(AppStorage storage s, Position storage pos) internal {
+        FundingState storage fs = s.fundingStates[pos.marketId];
+
+        int256 currentIndex = pos.isLong
+            ? fs.cumulativeFundingPerUnitLong
+            : fs.cumulativeFundingPerUnitShort;
+
+        int256 fundingDelta = currentIndex - pos.lastFundingIndex;
+        int256 fundingPayment = LibMath.mulFpSigned(int256(pos.sizeUsd), fundingDelta);
+
+        if (fundingPayment > 0) {
+            uint256 owed = uint256(fundingPayment);
+            uint256 owedTokens = _usdToTokens(s, pos.collateralToken, owed);
+            if (owedTokens >= pos.collateralAmount) {
+                pos.collateralAmount = 0;
+                pos.collateralUsd = 0;
+            } else {
+                pos.collateralAmount -= owedTokens;
+                pos.collateralUsd = pos.collateralUsd > owed ? pos.collateralUsd - owed : 0;
+            }
+        } else if (fundingPayment < 0) {
+            uint256 received = uint256(-fundingPayment);
+            uint256 receivedTokens = _usdToTokens(s, pos.collateralToken, received);
+            pos.collateralAmount += receivedTokens;
+            pos.collateralUsd += received;
+        }
+
+        pos.lastFundingIndex = currentIndex;
+    }
+
+    function _applyVirtualTrade(
+        AppStorage storage s,
+        uint256 _marketId,
+        uint256 _sizeUsd,
+        bool _isLong,
+        bool _isOpen
+    ) internal {
+        VirtualPool storage pool = s.virtualPools[_marketId];
+        if (pool.baseReserve == 0) return;
+
+        uint256 k = LibMath.mulFp(pool.baseReserve, pool.quoteReserve);
+        bool addQuote = (_isLong && _isOpen) || (!_isLong && !_isOpen);
+
+        if (addQuote) {
+            pool.quoteReserve += _sizeUsd;
+        } else {
+            pool.quoteReserve = pool.quoteReserve > _sizeUsd ? pool.quoteReserve - _sizeUsd : 1;
+        }
+
+        if (pool.quoteReserve > 0) {
+            pool.baseReserve = LibMath.divFp(k, pool.quoteReserve);
+        }
+    }
+
+    function _calculatePayout(
+        uint256 _collateralAmount,
+        int256 _pnl,
+        uint256 _feeInTokens,
+        address _token,
+        AppStorage storage s
+    ) internal returns (uint256 payout) {
+        uint256 pnlTokens;
+        if (_pnl > 0) {
+            pnlTokens = _usdToTokens(s, _token, uint256(_pnl));
+            payout = _collateralAmount + pnlTokens;
+        } else if (_pnl < 0) {
+            pnlTokens = _usdToTokens(s, _token, uint256(-_pnl));
+            payout = _collateralAmount > pnlTokens ? _collateralAmount - pnlTokens : 0;
+        } else {
+            payout = _collateralAmount;
+        }
+
+        payout = payout > _feeInTokens ? payout - _feeInTokens : 0;
+
+        uint256 insuranceCut = LibFee.calculateInsuranceContribution(_feeInTokens);
+        s.insuranceBalances[_token] += insuranceCut;
+    }
+
+    function _payoutToVault(
+        AppStorage storage s,
+        address _user,
+        address _token,
+        uint256 _amount
+    ) internal {
+        address vault = s.userVaults[_user];
+        require(vault != address(0), "OrderBook: no vault");
+
+        // Central vault solvency check
+        uint256 actualBalance = IERC20(_token).balanceOf(address(this));
+        uint256 payout = _amount;
+        if (payout > actualBalance) {
+            payout = actualBalance;
+            emit LibEvents.VaultDeficit(_token, _amount - payout);
+        }
+
+        if (payout == 0) return;
+
+        s.vaultBalances[_token] = s.vaultBalances[_token] > payout
+            ? s.vaultBalances[_token] - payout
+            : 0;
+
+        LibSafeERC20.safeTransfer(_token, vault, payout);
+        ITradingAccount(vault).unlockFromPosition(_token, payout, 0);
+    }
+
+    // ============================================================
+    //              INTERNAL: TRIGGER VALIDATION
+    // ============================================================
 
     function _validateTriggerCondition(Order storage _order, uint256 _currentPrice) internal view {
         if (_order.orderType == ORDER_TYPE_LIMIT) {

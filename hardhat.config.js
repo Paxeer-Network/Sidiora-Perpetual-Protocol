@@ -1,9 +1,35 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("@openzeppelin/hardhat-upgrades");
-require("dotenv/config"); // Import and configure dotenv
+require("dotenv/config");
+require("solidity-docgen");
 
+const optionalPlugins = [
+  "hardhat-gas-reporter",
+  "solidity-coverage",
+  "slither",
+  "hardhat-deploy",
+  "hardhat-ethers",
+  "hardhat-waffle",
+  "hardhat-contract-sizer",
+  "hardhat-abi-exporter",
+];
+
+for (const plugin of optionalPlugins) {
+  try {
+    require(plugin);
+  } catch (error) {
+    if (error.code !== "MODULE_NOT_FOUND") {
+      throw error;
+    }
+  }
+}
 // Retrieve the private key and API keys from the .env file
 const privateKey = process.env.PRIVATE_KEY;
+
+
+// Check if the private key is set
+if (!privateKey) {
+  console.warn("🚨 WARNING: PRIVATE_KEY is not set in the .env file. Deployments will not be possible.");
+}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -41,13 +67,14 @@ module.exports = {
       }
     ]
   },
-paths: {
-    tests: "./tests",
+  gasReporter: {
+    enabled: process.env.REPORT_GAS === "true",
+    currency: "USD",
   },
-networks: {
+  networks: {
     'paxeer-network': {
-      url: 'https://public-rpc.paxeer.app/rpc',
-      accounts: privateKey ? [privateKey] : [] // <-- ADD THIS LINE
+      url: 'http://89.117.147.196:8545',
+      accounts: privateKey ? [privateKey] : [],
     },
   },
   etherscan: {
@@ -59,10 +86,19 @@ networks: {
         network: "paxeer-network",
         chainId: 125,
         urls: {
-          apiURL: "https://paxscan.paxeer.app/api",
+          apiURL: "https://api.paxscan.io/api",
           browserURL: "https://paxscan.paxeer.app"
         }
       }
     ]
-  }
+  },
+  docgen: {
+    path: "docs",
+    clear: true,
+    runOnCompile: true,
+    except: ["test/**", "mocks/**", "lib/**"],
+    pages: "files",
+    template: "hardhat",
+    outputDir: "docs",
+  },
 };

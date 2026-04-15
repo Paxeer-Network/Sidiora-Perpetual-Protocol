@@ -11,6 +11,7 @@ import {LibMath} from "../../libraries/LibMath.sol";
 import {LibEvents} from "../../libraries/LibEvents.sol";
 import {ITradingAccount} from "../../interfaces/ITradingAccount.sol";
 import {IERC20} from "../../interfaces/IERC20.sol";
+import {LibBorrowingFee} from "../../libraries/LibBorrowingFee.sol";
 
 /// @title PositionFacet - Position lifecycle: open, modify, close
 /// @dev Net mode: one direction per market per user. If long, cannot short same market.
@@ -118,6 +119,9 @@ contract PositionFacet {
         // Update mappings
         s.userPositionIds[msg.sender].push(positionId);
         s.userMarketPosition[msg.sender][_marketId] = positionId;
+
+        // Initialize borrowing fee tracking
+        LibBorrowingFee.initBorrowing(positionId);
 
         // Update open interest
         if (_isLong) {
@@ -320,6 +324,16 @@ contract PositionFacet {
         uint256 fee = LibFee.calculateTradingFee(_closeSizeUsd, false);
         uint256 feeInTokens = _usdToTokens(s, pos.collateralToken, fee);
 
+        // Borrowing fee — accrue full, deduct proportional share
+        uint256 totalBorrowingUsd = LibBorrowingFee.accrueBorrowingFee(_positionId, pos.sizeUsd);
+        uint256 closedBorrowingUsd = LibMath.mulFp(totalBorrowingUsd, closeFraction);
+        uint256 borrowingFeeTokens = _usdToTokens(s, pos.collateralToken, closedBorrowingUsd);
+        feeInTokens += borrowingFeeTokens;
+        // Reduce accrued by the closed portion
+        s.accruedBorrowingFee[_positionId] = totalBorrowingUsd > closedBorrowingUsd
+            ? totalBorrowingUsd - closedBorrowingUsd
+            : 0;
+
         // Calculate payout
         uint256 payout = _calculatePayout(releasedCollateral, closedPnl, feeInTokens, pos.collateralToken, s);
 
@@ -373,9 +387,15 @@ contract PositionFacet {
         uint256 exitPrice = s.latestPrice[pos.marketId];
         int256 pnl = LibPosition.calculatePnl(pos, exitPrice);
 
-        // Fee
+        // Trading fee
         uint256 fee = LibFee.calculateTradingFee(pos.sizeUsd, false);
         uint256 feeInTokens = _usdToTokens(s, pos.collateralToken, fee);
+
+        // Borrowing fee — accrue and add to fee deduction
+        uint256 borrowingFeeUsd = LibBorrowingFee.accrueBorrowingFee(_positionId, pos.sizeUsd);
+        uint256 borrowingFeeTokens = _usdToTokens(s, pos.collateralToken, borrowingFeeUsd);
+        feeInTokens += borrowingFeeTokens;
+        LibBorrowingFee.clearBorrowing(_positionId);
 
         // Calculate payout
         uint256 payout = _calculatePayout(pos.collateralAmount, pnl, feeInTokens, pos.collateralToken, s);
@@ -440,6 +460,28 @@ contract PositionFacet {
     function getOpenInterest(uint256 _marketId) external view returns (uint256 longOI, uint256 shortOI) {
         MarketOI storage oi = appStorage().openInterest[_marketId];
         return (oi.longOI, oi.shortOI);
+    }
+
+    /// @notice Get the pending borrowing fee for a position
+    /// @param _positionId The position ID
+    /// @return feeUsd Pending borrowing fee in USD (18 dec)
+    function getPendingBorrowingFee(uint256 _positionId) external view returns (uint256 feeUsd) {
+        AppStorage storage s = appStorage();
+        Position storage pos = s.positions[_positionId];
+        if (!pos.active) return 0;
+        return LibBorrowingFee.getPendingBorrowingFee(_positionId, pos.sizeUsd);
+    }
+
+    /// @notice Set the global borrowing fee rate
+    /// @param _ratePerSecond Per-second rate (18 dec). Example: 1e10 ≈ 0.03%/hr ≈ 0.76%/day
+    function setBorrowingFeeRate(uint256 _ratePerSecond) external {
+        LibAccessControl.enforceRole(LibAccessControl.MARKET_ADMIN_ROLE);
+        appStorage().borrowingFeeRatePerSecond = _ratePerSecond;
+    }
+
+    /// @notice Get the current borrowing fee rate
+    function getBorrowingFeeRate() external view returns (uint256) {
+        return appStorage().borrowingFeeRatePerSecond;
     }
 
     // ============================================================
@@ -596,7 +638,9 @@ contract PositionFacet {
 
         // Emit funding event for indexer visibility
         if (fundingPayment != 0) {
-            emit LibEvents.FundingSettled(pos.marketId, fundingPayment, int256(0), int256(0));
+            int256 longPayment = pos.isLong ? fundingPayment : int256(0);
+            int256 shortPayment = pos.isLong ? int256(0) : fundingPayment;
+            emit LibEvents.FundingSettled(pos.marketId, fs.currentFundingRatePerSecond, longPayment, shortPayment);
         }
     }
 
@@ -635,15 +679,26 @@ contract PositionFacet {
         address vault = s.userVaults[_user];
         require(vault != address(0), "Position: no vault");
 
-        // Deduct from central vault balance
-        s.vaultBalances[_token] = s.vaultBalances[_token] > _amount
-            ? s.vaultBalances[_token] - _amount
+        // Central vault solvency check — verify actual token balance
+        uint256 actualBalance = IERC20(_token).balanceOf(address(this));
+        uint256 payout = _amount;
+        if (payout > actualBalance) {
+            // Cap to available balance — deficit absorbed by protocol
+            payout = actualBalance;
+            emit LibEvents.VaultDeficit(_token, _amount - payout);
+        }
+
+        if (payout == 0) return;
+
+        // Deduct from central vault balance tracking
+        s.vaultBalances[_token] = s.vaultBalances[_token] > payout
+            ? s.vaultBalances[_token] - payout
             : 0;
 
         // Transfer tokens to user vault
-        LibSafeERC20.safeTransfer(_token, vault, _amount);
+        LibSafeERC20.safeTransfer(_token, vault, payout);
 
         // Notify trading account to update locked balance accounting
-        ITradingAccount(vault).unlockFromPosition(_token, _amount, 0);
+        ITradingAccount(vault).unlockFromPosition(_token, payout, 0);
     }
 }

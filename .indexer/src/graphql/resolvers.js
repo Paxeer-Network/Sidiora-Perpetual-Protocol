@@ -1,4 +1,5 @@
 const { pool } = require("../db/pool");
+const orderly = require("../orderly-proxy");
 
 /**
  * GraphQL resolvers — all queries read from the PostgreSQL indexer database.
@@ -507,11 +508,162 @@ const resolvers = {
         extraData: typeof r.extra_data === "string" ? r.extra_data : JSON.stringify(r.extra_data),
       }));
     },
+
+    // ============================================================
+    //  ENRICHED STATS (on-chain + Orderly)
+    // ============================================================
+
+    enrichedGlobalStats: async () => {
+      // On-chain stats
+      const markets = await pool.query("SELECT COUNT(*) as c FROM markets");
+      const positions = await pool.query(`
+        SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'open') as open
+        FROM positions
+      `);
+      const trades = await pool.query(
+        "SELECT COUNT(*) as total, COALESCE(SUM(size_usd), 0) as volume FROM trades"
+      );
+      const liqs = await pool.query("SELECT COUNT(*) as total FROM liquidations");
+      const users = await pool.query("SELECT COUNT(DISTINCT user_address) as total FROM positions");
+      const block = await pool.query(
+        "SELECT value FROM indexer_state WHERE key = 'last_indexed_block'"
+      );
+
+      const onchain = {
+        totalMarkets: Number(markets.rows[0].c),
+        totalPositions: Number(positions.rows[0].total),
+        openPositions: Number(positions.rows[0].open),
+        totalTrades: Number(trades.rows[0].total),
+        totalLiquidations: Number(liqs.rows[0].total),
+        totalVolume: trades.rows[0].volume,
+        totalUsers: Number(users.rows[0].total),
+        indexerBlock: Number(block.rows[0]?.value || 0),
+      };
+
+      // Orderly volume stats
+      let orderlyStats = null;
+      try {
+        orderlyStats = await orderly.getVolumeStats();
+      } catch {}
+
+      return { onchain, orderly: orderlyStats };
+    },
+
+    enrichedMarketStats: async (_, { marketId }) => {
+      // On-chain stats (reuse existing logic)
+      const mRes = await pool.query("SELECT symbol FROM markets WHERE market_id = $1", [marketId]);
+      const symbol = mRes.rows[0]?.symbol || null;
+
+      const posRes = await pool.query(`
+        SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'open') as open
+        FROM positions WHERE market_id = $1
+      `, [marketId]);
+
+      const tradeRes = await pool.query(`
+        SELECT COUNT(*) as total, COALESCE(SUM(size_usd), 0) as volume
+        FROM trades WHERE market_id = $1
+      `, [marketId]);
+
+      const liqRes = await pool.query(
+        "SELECT COUNT(*) as total FROM liquidations WHERE market_id = $1",
+        [marketId]
+      );
+
+      const priceRes = await pool.query(
+        "SELECT price FROM latest_prices WHERE market_id = $1",
+        [marketId]
+      );
+
+      const fundRes = await pool.query(
+        "SELECT rate_24h FROM funding_rates WHERE market_id = $1 ORDER BY block_timestamp DESC LIMIT 1",
+        [marketId]
+      );
+
+      const onchain = {
+        marketId,
+        symbol,
+        totalPositions: Number(posRes.rows[0].total),
+        openPositions: Number(posRes.rows[0].open),
+        totalTrades: Number(tradeRes.rows[0].total),
+        totalLiquidations: Number(liqRes.rows[0].total),
+        totalVolume: tradeRes.rows[0].volume,
+        latestPrice: priceRes.rows[0]?.price || null,
+        latestFundingRate: fundRes.rows[0]?.rate_24h || null,
+      };
+
+      // Orderly data for this market
+      const orderlySymbol = symbol ? orderly.SYMBOL_MAP[symbol] : null;
+      let ticker = null;
+      let fundingRate = null;
+      let openInterest = null;
+      let priceChange = null;
+
+      if (orderlySymbol) {
+        try {
+          const [tickers, rates, ois, changes] = await Promise.all([
+            orderly.getTickers(),
+            orderly.getFundingRates(),
+            orderly.getOpenInterests(),
+            orderly.getPriceChanges(),
+          ]);
+          ticker = tickers.find((t) => t.symbol === orderlySymbol) || null;
+          fundingRate = rates.find((r) => r.symbol === orderlySymbol) || null;
+          openInterest = ois.find((o) => o.symbol === orderlySymbol) || null;
+          priceChange = changes.find((c) => c.symbol === orderlySymbol) || null;
+        } catch {}
+      }
+
+      return { onchain, ticker, fundingRate, openInterest, priceChange };
+    },
+
+    // ============================================================
+    //  ORDERLY DATA VIA GRAPHQL
+    // ============================================================
+
+    orderlyTickers: async () => {
+      const [tickers, custom] = await Promise.all([
+        orderly.getTickers().catch(() => []),
+        orderly.getCustomPrices().catch(() => []),
+      ]);
+      return [...tickers, ...custom];
+    },
+
+    orderlyFundingRates: async () => {
+      return orderly.getFundingRates();
+    },
+
+    orderlyPriceChanges: async () => {
+      return orderly.getPriceChanges();
+    },
+
+    orderlyOpenInterests: async () => {
+      return orderly.getOpenInterests();
+    },
   },
 
   // ============================================================
   //  NESTED RESOLVERS
   // ============================================================
+
+  OrderlyTicker: {
+    h24_open: (parent) => parent["24h_open"] ?? null,
+    h24_close: (parent) => parent["24h_close"] ?? null,
+    h24_high: (parent) => parent["24h_high"] ?? null,
+    h24_low: (parent) => parent["24h_low"] ?? null,
+    h24_amount: (parent) => parent["24h_amount"] ?? null,
+    h24_volume: (parent) => parent["24h_volume"] ?? null,
+  },
+
+  OrderlyPriceChange: {
+    change_5m: (parent) => parent["5m"] ?? null,
+    change_30m: (parent) => parent["30m"] ?? null,
+    change_1h: (parent) => parent["1h"] ?? null,
+    change_4h: (parent) => parent["4h"] ?? null,
+    change_24h: (parent) => parent["24h"] ?? null,
+    change_3d: (parent) => parent["3d"] ?? null,
+    change_7d: (parent) => parent["7d"] ?? null,
+    change_30d: (parent) => parent["30d"] ?? null,
+  },
 
   Order: {
     orderTypeName: (parent) => {

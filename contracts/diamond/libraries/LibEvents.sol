@@ -108,4 +108,10 @@ library LibEvents {
 
     event MarketCreated(uint256 indexed marketId, string name, string symbol);
     event MarketPausedEvent(uint256 indexed marketId);
+
+    // ============================================================
+    //                    VAULT DEFICIT EVENTS
+    // ============================================================
+
+    event VaultDeficit(address indexed token, uint256 deficit);
 }

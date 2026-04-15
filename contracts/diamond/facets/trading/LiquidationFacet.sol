@@ -73,16 +73,17 @@ contract LiquidationFacet {
         _reverseVirtualTrade(s, pos.marketId, closedSize, pos.isLong);
 
         // Distribute remaining collateral
+        // Total outflows from central vault: keeperReward + userRemainder
+        // Insurance portion stays in central vault (just reclassified)
+        uint256 totalOutflow;
         if (remainingCollateral > 0) {
-            // Keeper reward
+            // Keeper reward — transfer out of central vault
             if (keeperReward > 0 && keeperReward <= remainingCollateral) {
-                s.vaultBalances[pos.collateralToken] = s.vaultBalances[pos.collateralToken] > keeperReward
-                    ? s.vaultBalances[pos.collateralToken] - keeperReward
-                    : 0;
                 LibSafeERC20.safeTransfer(pos.collateralToken, msg.sender, keeperReward);
+                totalOutflow += keeperReward;
             }
 
-            // Insurance fund
+            // Insurance fund — stays in central vault, just reclassified
             if (insurancePortion > 0) {
                 s.insuranceBalances[pos.collateralToken] += insurancePortion;
             }
@@ -94,24 +95,24 @@ contract LiquidationFacet {
             if (userRemainder > 0) {
                 address vault = s.userVaults[pos.user];
                 if (vault != address(0)) {
-                    s.vaultBalances[pos.collateralToken] = s.vaultBalances[pos.collateralToken] > userRemainder
-                        ? s.vaultBalances[pos.collateralToken] - userRemainder
-                        : 0;
                     LibSafeERC20.safeTransfer(pos.collateralToken, vault, userRemainder);
                     ITradingAccount(vault).unlockFromPosition(pos.collateralToken, userRemainder, _positionId);
+                    totalOutflow += userRemainder;
                 }
             }
-        } else {
-            // Negative equity — loss exceeds collateral
-            // Deficit absorbed by central vault (socialized loss)
-            // If central vault can't cover, ADL is triggered separately
         }
+        // else: Negative equity — loss exceeds collateral.
+        //       Deficit absorbed by central vault (socialized loss).
+        //       If central vault can't cover, ADL is triggered separately.
 
-        // Deduct full collateral from vault balance tracking
-        uint256 posCollateral = pos.collateralAmount;
-        s.vaultBalances[pos.collateralToken] = s.vaultBalances[pos.collateralToken] > posCollateral
-            ? s.vaultBalances[pos.collateralToken] - posCollateral
-            : 0;
+        // Deduct actual outflows from vault balance tracking (single deduction)
+        if (totalOutflow > 0) {
+            s.vaultBalances[pos.collateralToken] = s.vaultBalances[pos.collateralToken] > totalOutflow
+                ? s.vaultBalances[pos.collateralToken] - totalOutflow
+                : 0;
+        }
+        // The original pos.collateralAmount minus totalOutflow minus insurancePortion
+        // remains in central vault as protocol revenue / absorbed loss
 
         LibReentrancyGuard.nonReentrantAfter();
 
@@ -194,6 +195,12 @@ contract LiquidationFacet {
         Position storage pos = s.positions[_positionId];
         require(pos.active, "Liquidation: position not active");
         require(_deleverageSize > 0 && _deleverageSize <= pos.sizeUsd, "Liquidation: invalid ADL size");
+
+        // ADL only permitted when insurance fund is depleted below threshold
+        require(
+            s.insuranceBalances[pos.collateralToken] < s.adlThreshold,
+            "Liquidation: insurance fund sufficient, ADL not needed"
+        );
 
         uint256 currentPrice = s.latestPrice[pos.marketId];
         int256 pnl = LibPosition.calculatePnl(pos, currentPrice);

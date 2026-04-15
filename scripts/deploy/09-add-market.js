@@ -32,9 +32,9 @@ require("dotenv/config");
 
 const NEW_MARKETS = [
   {
-    name: "Tesla",
-    symbol: "TSLA",
-    price: "426.21",
+    name: "HYPE",
+    symbol: "HYPE",
+    price: "41.63",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "5000000",        // $5M
@@ -42,9 +42,9 @@ const NEW_MARKETS = [
     dampingFactor: "5000",             // 50%
   },
   {
-    name: "NVIDIA",
-    symbol: "NVDA",
-    price: "187.66",
+    name: "XRP",
+    symbol: "XRP",
+    price: "1.5300",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "10000000",       // $10M
@@ -52,9 +52,9 @@ const NEW_MARKETS = [
     dampingFactor: "5000",
   },
   {
-    name: "Nasdaq 100",
-    symbol: "NAS100",
-    price: "25195.0",
+    name: "ASTER",
+    symbol: "ASTER",
+    price: "0.7795",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "10000000",       // $10M
@@ -62,9 +62,9 @@ const NEW_MARKETS = [
     dampingFactor: "5000",
   },
   {
-    name: "Gold",
-    symbol: "XAU",
-    price: "5072.5",
+    name: "PUMP",
+    symbol: "PUMP",
+    price: "0.002127",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "10000000",       // $10M
@@ -72,9 +72,9 @@ const NEW_MARKETS = [
     dampingFactor: "5000",
   },
   {
-    name: "S&P 500",
-    symbol: "SPX500",
-    price: "6943.33",
+    name: "TRUMP",
+    symbol: "TRUMP",
+    price: "3.68",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "10000000",       // $10M
@@ -82,9 +82,9 @@ const NEW_MARKETS = [
     dampingFactor: "5000",
   },
   {
-    name: "Alphabet",
-    symbol: "GOOGL",
-    price: "311.84",
+    name: "BNB",
+    symbol: "BNB",
+    price: "673.50",
     maxLeverage: "500",
     maintenanceMarginBps: "100",       // 1.00%
     maxOpenInterest: "5000000",        // $5M

@@ -103,6 +103,8 @@ interface ITradingAccount {
 
     function lockForPosition(address _token, uint256 _amount, uint256 _positionId, uint256 _marketId, bool _isLong, address _centralVault) external;
     function unlockFromPosition(address _token, uint256 _amount, uint256 _positionId) external;
+    function reserveForOrder(address _token, uint256 _amount, uint256 _orderId) external;
+    function releaseReservation(address _token, uint256 _amount, uint256 _orderId) external;
     function recordFee(address _token, uint256 _amount, uint256 _positionId) external;
     function recordFunding(address _token, uint256 _amount, uint256 _positionId, bool _isPayment) external;
     function recordPnl(address _token, uint256 _amount, uint256 _positionId, bool _isProfit) external;

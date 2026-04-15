@@ -42,6 +42,10 @@ const ROBUSTNESS_CONFIG = {
   maxFundingRatePerSecond: ethers.parseEther("0.0000001"), // ~0.86%/day max
 };
 
+// Borrowing fee rate: ~0.03% per hour = ~0.76% per day
+// 0.03% / 3600 = 8.33e-8 per second = 8.33e10 in 18-dec
+const BORROWING_FEE_RATE_PER_SECOND = 83_000_000_000n; // ~0.03%/hr
+
 // Facets that were MODIFIED (need Replace for existing selectors + Add for new selectors)
 const UPDATED_FACETS = [
   "PositionFacet",
@@ -49,6 +53,7 @@ const UPDATED_FACETS = [
   "LiquidationFacet",
   "FundingRateFacet",
   "OracleFacet",
+  "VirtualAMMFacet",
   "CentralVaultFacet",
   "MarketRegistryFacet",
 ];
@@ -278,6 +283,29 @@ async function main() {
   }
 
   // ────────────────────────────────────────────────────────────
+  //  PHASE 5b: Set borrowing fee rate
+  // ────────────────────────────────────────────────────────────
+  console.log("\n━━━ Phase 5b: Set borrowing fee rate ━━━\n");
+
+  console.log(`  Rate: ${BORROWING_FEE_RATE_PER_SECOND} per second (~0.03%/hr)`);
+
+  if (dryRun) {
+    console.log("  DRY RUN — would call setBorrowingFeeRate()");
+  } else {
+    const positionFacet = await ethers.getContractAt("PositionFacet", diamondAddress);
+    const tx = await positionFacet.setBorrowingFeeRate(BORROWING_FEE_RATE_PER_SECOND);
+    const receipt = await tx.wait();
+    console.log(`  setBorrowingFeeRate tx: ${receipt.hash}`);
+
+    const verified = await positionFacet.getBorrowingFeeRate();
+    console.log(`  Verified rate: ${verified}`);
+  }
+
+  // NOTE: defaultOrderTTL defaults to 0 (no expiry). No admin setter exists yet.
+  // To enable order TTL, a setter function must be added to MarketRegistryFacet.
+  console.log("\n  NOTE: defaultOrderTTL = 0 (no expiry). Add admin setter if needed.");
+
+  // ────────────────────────────────────────────────────────────
   //  PHASE 6: Grant ORACLE_POSTER_ROLE to keeper multicall bot
   // ────────────────────────────────────────────────────────────
   console.log("\n━━━ Phase 6: Role configuration ━━━\n");
@@ -370,6 +398,9 @@ async function main() {
   console.log(`  TradingAccount impl: ${tradingAccountAddr}`);
   console.log("");
   console.log("  Changes applied:");
+  console.log("    [A1] TP/SL order execution — close path in executeOrder (OrderBookFacet)");
+  console.log("    [A2] Fixed liquidation double vault deduction (LiquidationFacet)");
+  console.log("    [A3] ADL insurance threshold check (LiquidationFacet)");
   console.log("    [C1] Fixed ADL auth (LiquidationFacet)");
   console.log("    [C3] Fixed funding settlement drain-to-zero (PositionFacet, LiquidationFacet)");
   console.log("    [C4] Oracle price deviation guard (OracleFacet)");
@@ -381,7 +412,15 @@ async function main() {
   console.log("    [H4] Funding-aware checkLiquidatable (LiquidationFacet)");
   console.log("    [H5] TP/SL close-order types (OrderBookFacet)");
   console.log("    [H6] removeCollateral (PositionFacet)");
+  console.log("    [B6] FundingSettled event emits actual payment amounts (PositionFacet)");
+  console.log("    [B7] Price staleness check in order execution (OrderBookFacet)");
   console.log("    [M4] getUtilization fix (CentralVaultFacet)");
+  console.log("    [NEW] Borrowing fee — per-second accrual on open positions (PositionFacet, LibBorrowingFee)");
+  console.log("    [NEW] Order collateral reservation — locks funds on placement (OrderBookFacet, TradingAccount)");
+  console.log("    [NEW] Order TTL / expiry (OrderBookFacet) — disabled by default (TTL=0)");
+  console.log("    [NEW] Mark price TWAP for funding (VirtualAMMFacet, FundingRateFacet)");
+  console.log("    [NEW] Central vault solvency check on payouts (PositionFacet, OrderBookFacet)");
+  console.log("    [NEW] VOM precompile oracle mode (OracleFacet)");
   console.log("    [NEW] TradingAccount — per-position margin, ledger, delegation, margin modes");
   console.log("    [NEW] KeeperMulticallFacet — atomic price+sync+funding+orders+liquidations");
   console.log("    [NEW] setRobustnessParams admin function (MarketRegistryFacet)");

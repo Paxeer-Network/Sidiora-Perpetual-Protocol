@@ -48,14 +48,18 @@ contract FundingRateFacet {
         uint256 indexTWAP = LibTWAP.calculateTWAP(s.priceHistory[_marketId], TWAP_WINDOW, block.timestamp);
         if (indexTWAP == 0) return;
 
-        // markTWAP from vAMM — use current mark price as proxy
-        // (In production, would maintain a separate mark price history)
-        VirtualPool storage pool = s.virtualPools[_marketId];
+        // markTWAP from vAMM mark price history
         uint256 markPrice;
-        if (pool.baseReserve > 0) {
-            markPrice = LibMath.divFp(pool.quoteReserve, pool.baseReserve);
+        if (s.markPriceHistory[_marketId].length > 0) {
+            markPrice = LibTWAP.calculateTWAP(s.markPriceHistory[_marketId], TWAP_WINDOW, block.timestamp);
         } else {
-            markPrice = indexTWAP; // No vAMM = zero funding
+            // Fallback to spot mark price if no history yet
+            VirtualPool storage pool = s.virtualPools[_marketId];
+            if (pool.baseReserve > 0) {
+                markPrice = LibMath.divFp(pool.quoteReserve, pool.baseReserve);
+            } else {
+                markPrice = indexTWAP; // No vAMM = zero funding
+            }
         }
 
         // fundingRate24h = (markPrice - indexTWAP) / indexTWAP

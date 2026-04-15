@@ -29,23 +29,26 @@
       "deployedAt": "2026-02-11T17:41:19.728Z"
     },
     "PositionFacet": {
-      "address": "0xdB97C3751B990ce9b6bf3A693307827269df9723",
+      "address": "0x6bf3722414b240A2503a512A84f54Ee161fa148e",
       "selectors": [
         "0xa8f35adf",
         "0x8347a72f",
         "0xa126d601",
+        "0x27646b81",
         "0x1b3ee0f1",
+        "0x687185aa",
         "0xeb02c301",
         "0x5c58777e",
         "0xeddf7570",
         "0x6d055f06",
         "0xeaa6185c",
-        "0x6a9b1891"
+        "0x6a9b1891",
+        "0xe8810e01"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "OrderBookFacet": {
-      "address": "0xB3613A2BA3Faa57805D4214BD2D7e2E0d4943599",
+      "address": "0x719B8f35701ff1050EB0Bb87E418Bb321Cc0e979",
       "selectors": [
         "0x514fcac7",
         "0x94f61134",
@@ -56,19 +59,19 @@
         "0x1a6c35e0",
         "0x4b10244d"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "LiquidationFacet": {
-      "address": "0x5231a97f4aeC1684C255D92A0e9b7955FD27EC84",
+      "address": "0x661320835387532aFDEc3F243B0A328BF42d7cA7",
       "selectors": [
         "0x0a4842f8",
         "0x3e129715",
         "0x415f1240"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "FundingRateFacet": {
-      "address": "0xD33980A2D19daebe4bD934bD50E9f5006535277a",
+      "address": "0x669077515193401ac30984a9d2314903ACcAc25f",
       "selectors": [
         "0x8c1b753a",
         "0x40f04812",
@@ -77,26 +80,34 @@
         "0xed08f9dc",
         "0x894feb9d"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "OracleFacet": {
-      "address": "0x431a16574B5F1E343A327f002021C232d8c24F18",
+      "address": "0xd21135802D8eFD6c00d6332e262A7B2c75d5bF69",
       "selectors": [
         "0x7ffbc7a8",
+        "0x064cbca7",
         "0x8fd652c3",
+        "0x5ab2afc9",
         "0x5b67c98d",
+        "0x2666703e",
         "0xe7572230",
         "0x980d7d37",
         "0x13c121bd",
         "0x044e984f",
         "0xdb4e3ec8",
+        "0x47846204",
         "0x89bc4623",
-        "0x65b2d327"
+        "0xec9fd604",
+        "0x65b2d327",
+        "0xcfcb4180",
+        "0x4493bb35",
+        "0x05d2362c"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "VirtualAMMFacet": {
-      "address": "0x460490264c76d8aE5739F0744e40160582dC7E17",
+      "address": "0x5c869AC52dd91958E7dd98e570aaeFE6FD6864B5",
       "selectors": [
         "0x5af3d061",
         "0x068bcd8d",
@@ -104,7 +115,7 @@
         "0x37fb2ee0",
         "0xa81b1979"
       ],
-      "deployedAt": "2026-02-11T17:41:41.626Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "PriceFeedFacet": {
       "address": "0x08E967408a4Ee268FF11ab116BfE1D95F2484c61",
@@ -161,14 +172,14 @@
       "deployedAt": "2026-02-11T17:41:55.396Z"
     },
     "CentralVaultFacet": {
-      "address": "0x2fB21B9e338db7FEF8B2dF9F5bE2C575CA8F2712",
+      "address": "0xE4410832468F0Ec655f26b0f22C1f6864628Ea21",
       "selectors": [
         "0xd8f8deb8",
         "0xa5e0759a",
         "0xfdce8643",
         "0xd3d7c002"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "CollateralFacet": {
       "address": "0x26D0BEE6F9249dD3d098288a74f7b026929dD6BD",
@@ -183,7 +194,7 @@
       "deployedAt": "2026-02-11T17:42:00.654Z"
     },
     "MarketRegistryFacet": {
-      "address": "0x567724ab315cC775d8DD89b93cB9B332492495eA",
+      "address": "0x819904c316dd0B8259d4486B446A057922F24116",
       "selectors": [
         "0x9bd1d513",
         "0x565c1714",
@@ -198,7 +209,7 @@
         "0x8162486b",
         "0xfcb8ee95"
       ],
-      "deployedAt": "2026-03-16T05:01:13.962Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     },
     "InsuranceFundFacet": {
       "address": "0x830746A6b7b8989846d4B8848a12326d426Ed562",
@@ -222,12 +233,125 @@
       "deployedAt": "2026-02-11T17:42:08.673Z"
     },
     "KeeperMulticallFacet": {
-      "address": "0x4fEB3D865D743c88BE2C4f1b623e4946E9Cb19f5",
+      "address": "0xa8D4B87B11293086Fa81A7f852dA8df9FC820BC7",
       "selectors": [
         "0xbb1fe744",
         "0x74deec42"
       ],
-      "deployedAt": "2026-03-16T05:01:13.963Z"
+      "deployedAt": "2026-04-09T02:11:27.107Z"
+    },
+    "SpotMarketRegistryFacet": {
+      "address": "0x9Ae53F71Ba33790965674D11d44542d4236B86F3",
+      "selectors": [
+        "0x8af40ec8",
+        "0xf041790b",
+        "0x5ad0f1b2",
+        "0x0f030c8f",
+        "0x012c71ae",
+        "0xf60ebf98",
+        "0x095540ab",
+        "0x319f24ca",
+        "0x2b93097b",
+        "0xba8e2bd8",
+        "0x688bb825"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.599Z"
+    },
+    "SpotSettlementFacet": {
+      "address": "0x2B5B23dd26E53D780bdBEdfB6BB750342567A811",
+      "selectors": [
+        "0xbfe9aaa3",
+        "0x4d39fc3d",
+        "0x33f77c0b",
+        "0xa38955dd",
+        "0xa9fd1a8f",
+        "0xe49de3b7",
+        "0x6afcce87",
+        "0xfd1a7504",
+        "0xbaa77629",
+        "0x58e2bd21",
+        "0x10271aef",
+        "0x54eea796",
+        "0xd61551fc",
+        "0x3e42c51c",
+        "0x80a85cb8",
+        "0x199ff12a"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "SpotOrderBookFacet": {
+      "address": "0x8825Bc2F972e56370FebC8423EA6045754c775Ba",
+      "selectors": [
+        "0xb13cf15d",
+        "0x24b2d7c3",
+        "0xcff55ace",
+        "0x515e8a36",
+        "0x23d90e9d"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "SpotBatchAuctionFacet": {
+      "address": "0xF77587b36bbE6B5431c88e835fFD1A055cB001A9",
+      "selectors": [
+        "0x950a1d55",
+        "0xa640c2ea",
+        "0x8f4b9e80"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "SpotModeSwitchFacet": {
+      "address": "0xdBF6d4cA5357585140E78C5F9BbbF3651F0b3E69",
+      "selectors": [
+        "0x3a8e2f38",
+        "0x7b99e109",
+        "0x73384de9",
+        "0xe03ae914",
+        "0x73b69f55",
+        "0x0bc46c98",
+        "0x7dc1da01"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "PLVRegistryFacet": {
+      "address": "0x89e70816d6b0579E5B791aa3b2086DF95d1df735",
+      "selectors": [
+        "0x79072bb9",
+        "0x9893631f",
+        "0x8bb1125a",
+        "0xbe332495",
+        "0x30f93993",
+        "0x35c96c86",
+        "0x96cc0ada",
+        "0x1903ea57",
+        "0xda0f05c8"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "PoFQFacet": {
+      "address": "0x40aB014280F182C3e098fe8F55D626bAADe4c10F",
+      "selectors": [
+        "0x816eb9e7",
+        "0xc6537aa6",
+        "0x07662c48",
+        "0x93646c9f",
+        "0x7af3dd1a",
+        "0x900eaf9b",
+        "0xc2d1bbb8",
+        "0x38c67dff",
+        "0x2c8fc271",
+        "0xf7c34875",
+        "0xdb14fa06",
+        "0x928521c4"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
+    },
+    "SpotKeeperMulticallFacet": {
+      "address": "0x288c479379AC977064867d5b10EC5aE27fB6CbD0",
+      "selectors": [
+        "0x75a7151e",
+        "0x58f9846b"
+      ],
+      "deployedAt": "2026-04-15T03:24:04.600Z"
     }
   },
   "contracts": {
@@ -236,11 +360,11 @@
       "deployedAt": "2026-02-11T17:42:14.087Z"
     },
     "TradingAccountImplementation": {
-      "address": "0x2B96C3E5e184C919311dFcbE4753d0214e5255B3",
-      "deployedAt": "2026-03-16T05:01:13.963Z"
+      "address": "0x81df19Bae8723B8cfD59Ef287B5fad56a70fecF1",
+      "deployedAt": "2026-04-09T02:11:27.107Z"
     }
   },
-  "timestamp": "2026-03-16T05:01:13.963Z",
+  "timestamp": "2026-04-15T03:24:04.600Z",
   "initialized": {
     "markets": [
       "BTC",
@@ -282,33 +406,33 @@
       },
       {
         "name": "PositionFacet",
-        "address": "0xD0f2448eF25427cd1555811f73D1d8d2FAbCf74e",
-        "status": "verified"
+        "address": "0x6bf3722414b240A2503a512A84f54Ee161fa148e",
+        "status": "failed"
       },
       {
         "name": "OrderBookFacet",
-        "address": "0xd2ff3a1684B970750b7FB912b6293C0842554eb4",
-        "status": "verified"
+        "address": "0x719B8f35701ff1050EB0Bb87E418Bb321Cc0e979",
+        "status": "failed"
       },
       {
         "name": "LiquidationFacet",
-        "address": "0xfB1Efb83568635d5fBC1C572F5Cb03FF8fF81982",
-        "status": "verified"
+        "address": "0x661320835387532aFDEc3F243B0A328BF42d7cA7",
+        "status": "failed"
       },
       {
         "name": "FundingRateFacet",
-        "address": "0x3B13193149142ee25926DfAe5C169D36f8EfDf0c",
-        "status": "verified"
+        "address": "0x669077515193401ac30984a9d2314903ACcAc25f",
+        "status": "failed"
       },
       {
         "name": "OracleFacet",
-        "address": "0x8699dE864496A7Af1F73540262FAA9eD561D7d0F",
-        "status": "verified"
+        "address": "0xd21135802D8eFD6c00d6332e262A7B2c75d5bF69",
+        "status": "failed"
       },
       {
         "name": "VirtualAMMFacet",
-        "address": "0x460490264c76d8aE5739F0744e40160582dC7E17",
-        "status": "verified"
+        "address": "0x5c869AC52dd91958E7dd98e570aaeFE6FD6864B5",
+        "status": "failed"
       },
       {
         "name": "PriceFeedFacet",
@@ -332,8 +456,8 @@
       },
       {
         "name": "CentralVaultFacet",
-        "address": "0xd09b87f5790C29fB3D25D642E7E681d722e2Be6A",
-        "status": "verified"
+        "address": "0xE4410832468F0Ec655f26b0f22C1f6864628Ea21",
+        "status": "failed"
       },
       {
         "name": "CollateralFacet",
@@ -342,8 +466,8 @@
       },
       {
         "name": "MarketRegistryFacet",
-        "address": "0x2af1c76EC28F437B165594137f28d5A57Af1EEF3",
-        "status": "verified"
+        "address": "0x819904c316dd0B8259d4486B446A057922F24116",
+        "status": "failed"
       },
       {
         "name": "InsuranceFundFacet",
@@ -361,10 +485,10 @@
         "status": "verified"
       }
     ],
-    "timestamp": "2026-02-11T17:48:51.544Z",
-    "verified": 20,
+    "timestamp": "2026-04-13T05:44:51.731Z",
+    "verified": 12,
     "alreadyVerified": 0,
-    "failed": 0
+    "failed": 8
   },
   "collateral": [
     {
@@ -478,6 +602,76 @@
       "maxOpenInterest": "$5,000,000",
       "initialPrice": "$311.84",
       "addedAt": "2026-02-12T09:54:04.108Z"
+    },
+    {
+      "marketId": 11,
+      "name": "Paxeer",
+      "symbol": "PAX",
+      "maxLeverage": "1000x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$2,000,000",
+      "initialPrice": "$11.45674982627817",
+      "addedAt": "2026-03-17T01:51:00.769Z"
+    },
+    {
+      "marketId": 12,
+      "name": "Sidiora",
+      "symbol": "SID",
+      "maxLeverage": "1000x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$2,000,000",
+      "initialPrice": "$1.1408908986922963",
+      "addedAt": "2026-03-17T01:54:44.096Z"
+    },
+    {
+      "marketId": 13,
+      "name": "HYPE",
+      "symbol": "HYPE",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$5,000,000",
+      "initialPrice": "$41.63",
+      "addedAt": "2026-03-17T22:33:59.069Z"
+    },
+    {
+      "marketId": 14,
+      "name": "XRP",
+      "symbol": "XRP",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$1.5300",
+      "addedAt": "2026-03-17T22:33:59.069Z"
+    },
+    {
+      "marketId": 15,
+      "name": "ASTER",
+      "symbol": "ASTER",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$0.7795",
+      "addedAt": "2026-03-17T22:33:59.069Z"
+    },
+    {
+      "marketId": 16,
+      "name": "TRUMP",
+      "symbol": "TRUMP",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$10,000,000",
+      "initialPrice": "$3.68",
+      "addedAt": "2026-03-17T22:33:59.069Z"
+    },
+    {
+      "marketId": 17,
+      "name": "BNB",
+      "symbol": "BNB",
+      "maxLeverage": "500x",
+      "maintenanceMarginBps": 100,
+      "maxOpenInterest": "$5,000,000",
+      "initialPrice": "$673.50",
+      "addedAt": "2026-03-17T22:33:59.069Z"
     }
   ],
   "upgrades": [
@@ -504,6 +698,142 @@
       },
       "deployer": "0x4930De8022718F0111010f0Fd90d50744E859a4E",
       "timestamp": "2026-03-16T05:01:13.963Z"
+    },
+    {
+      "version": "v3-latest",
+      "updatedFacets": [
+        "PositionFacet",
+        "OrderBookFacet",
+        "LiquidationFacet",
+        "FundingRateFacet",
+        "OracleFacet",
+        "VirtualAMMFacet",
+        "CentralVaultFacet",
+        "MarketRegistryFacet"
+      ],
+      "checkedFacets": [
+        "KeeperMulticallFacet"
+      ],
+      "tradingAccountImpl": "0x81df19Bae8723B8cfD59Ef287B5fad56a70fecF1",
+      "validatorKeeper": "0x4B0e62a3d95c38F68AA47d38634FD4CAEf8471dF",
+      "vomPrecompile": "0x0000000000000000000000000000000000000903",
+      "vomEnabled": true,
+      "borrowingFeeRate": "83000000000",
+      "vomMarketIds": [
+        {
+          "marketId": 0,
+          "pair": "BTC/USDC",
+          "vomId": "0x9282eb09b844791118907b4cb066e6f9d167435f2382166b9e3594bcb4072bde"
+        },
+        {
+          "marketId": 1,
+          "pair": "ETH/USDC",
+          "vomId": "0x7ea41243798f304c9efd5c2e0c82a273090146c4718014ecc8570eb373df2b78"
+        },
+        {
+          "marketId": 2,
+          "pair": "SOL/USDC",
+          "vomId": "0x8c150dc41be8440d68c984f2397e7bebbdd5bf5a41f46cc17a0cc9e2e7817e44"
+        },
+        {
+          "marketId": 3,
+          "pair": "AVAX/USDC",
+          "vomId": "0x112fa91bfa10920833d9dd3e97b7313594994efb0741deb72c0c27110456bfc1"
+        },
+        {
+          "marketId": 4,
+          "pair": "LINK/USDC",
+          "vomId": "0x611c2dc3263a81a38084fe797d493e265849b95eb37c0783f9cd14f3ee6bf2ce"
+        },
+        {
+          "marketId": 5,
+          "pair": "TSLA/USDC",
+          "vomId": "0xb852bdfc5816c02e359583cd50a02307311d17e0da406a1b95dd1d0cb721b55b"
+        },
+        {
+          "marketId": 6,
+          "pair": "NVDA/USDC",
+          "vomId": "0x4f1f72a5660fa9f72dacd80703a6887c19bdb4c1a772b8d152e1c6f390cc5ec4"
+        },
+        {
+          "marketId": 7,
+          "pair": "NAS100/USDC",
+          "vomId": "0xeb9001e03ae106b29cc6ec4d27b0912ce778544770c0ba09b676bd3d0b65bf62"
+        },
+        {
+          "marketId": 8,
+          "pair": "XAU/USDC",
+          "vomId": "0xa6ecf6e83265ce70cf96b833ab62f0accb81e50a2559d10689efae30c7a774f6"
+        },
+        {
+          "marketId": 9,
+          "pair": "SPX500/USDC",
+          "vomId": "0x86eec2751281c7c4a37356cfc2b5136e0044c4598c4f66b3f0041ba60789bedd"
+        },
+        {
+          "marketId": 10,
+          "pair": "GOOGL/USDC",
+          "vomId": "0xb3c3ac2bf6f03aa4e4f5ee28ab3bb441528d28901187d093fc5a8c1fc6f81289"
+        },
+        {
+          "marketId": 11,
+          "pair": "PAX/USDC",
+          "vomId": "0xa511fbdb722b9152a5eaf102e2d294a6bd72d6e4b7391c132bcf8cc9becb4632"
+        },
+        {
+          "marketId": 12,
+          "pair": "SID/USDC",
+          "vomId": "0x626d87e0784ea46af0ec6013e112c151da717a7f9dc9c5891ebef1d879332fd2"
+        },
+        {
+          "marketId": 13,
+          "pair": "HYPE/USDC",
+          "vomId": "0xa3043e35e401a7f70fca4ce655b794d52a4912d08fe8145a033cbd85d5277f95"
+        },
+        {
+          "marketId": 14,
+          "pair": "XRP/USDC",
+          "vomId": "0x86fee4c3b0e6ba5100f97596f82f21f126f92aac872cfb565ba0a82c663530cb"
+        },
+        {
+          "marketId": 15,
+          "pair": "ASTER/USDC",
+          "vomId": "0x07d1692bee9c501c3734a4e951c99fe28c4c3bfb167a352c9cc0fdd925dc50a6"
+        },
+        {
+          "marketId": 16,
+          "pair": "TRUMP/USDC",
+          "vomId": "0x25fcdf455b8c141f60175cc4ce5fda172e349487b66e343d9c4a54bbb1457bc9"
+        },
+        {
+          "marketId": 17,
+          "pair": "BNB/USDC",
+          "vomId": "0x21878c0ff3a2aa21078f382ad4d5ccea0f40b07b4a0223072705622f8949da8e"
+        }
+      ],
+      "deployer": "0x4930De8022718F0111010f0Fd90d50744E859a4E",
+      "timestamp": "2026-04-09T02:11:27.113Z"
+    },
+    {
+      "version": "v4-spot",
+      "newFacets": [
+        "SpotMarketRegistryFacet",
+        "SpotSettlementFacet",
+        "SpotOrderBookFacet",
+        "SpotBatchAuctionFacet",
+        "SpotModeSwitchFacet",
+        "PLVRegistryFacet",
+        "PoFQFacet",
+        "SpotKeeperMulticallFacet"
+      ],
+      "spotConfig": {
+        "epochLength": 5,
+        "fastSettleFeeBps": 1,
+        "defaultBatchDuration": 50
+      },
+      "validatorKeeper": "0x4B0e62a3d95c38F68AA47d38634FD4CAEf8471dF",
+      "deployer": "0x4930De8022718F0111010f0Fd90d50744E859a4E",
+      "timestamp": "2026-04-15T03:24:04.600Z"
     }
   ]
 }

@@ -118,7 +118,7 @@ describe("Vaults & Collateral", function () {
       it("cannot re-initialize", async function () {
         await expect(
           vault.initialize(d.user2.address, d.diamondAddress)
-        ).to.be.revertedWith("UserVault: already initialized");
+        ).to.be.revertedWith("TradingAccount: already initialized");
       });
     });
 
@@ -135,13 +135,13 @@ describe("Vaults & Collateral", function () {
         await d.usdc.connect(d.user2).approve(vaultAddr, amount);
         await expect(
           vault.connect(d.user2).deposit(usdcAddr, amount)
-        ).to.be.revertedWith("UserVault: caller is not owner");
+        ).to.be.revertedWith("TradingAccount: unauthorized");
       });
 
       it("reverts on zero amount", async function () {
         await expect(
           vault.connect(d.user1).deposit(usdcAddr, 0)
-        ).to.be.revertedWith("UserVault: zero amount");
+        ).to.be.revertedWith("TradingAccount: zero amount");
       });
 
       it("emits Deposited event", async function () {
@@ -179,19 +179,19 @@ describe("Vaults & Collateral", function () {
       it("non-owner cannot withdraw", async function () {
         await expect(
           vault.connect(d.user2).withdraw(usdcAddr, 1000n * 10n ** 6n)
-        ).to.be.revertedWith("UserVault: caller is not owner");
+        ).to.be.revertedWith("TradingAccount: unauthorized");
       });
 
       it("reverts on zero amount", async function () {
         await expect(
           vault.connect(d.user1).withdraw(usdcAddr, 0)
-        ).to.be.revertedWith("UserVault: zero amount");
+        ).to.be.revertedWith("TradingAccount: zero amount");
       });
 
       it("reverts on insufficient balance", async function () {
         await expect(
           vault.connect(d.user1).withdraw(usdcAddr, 20000n * 10n ** 6n)
-        ).to.be.revertedWith("UserVault: insufficient available balance");
+        ).to.be.revertedWith("TradingAccount: insufficient balance");
       });
 
       it("emits Withdrawn event", async function () {
@@ -214,13 +214,13 @@ describe("Vaults & Collateral", function () {
       it("non-owner cannot emergency withdraw", async function () {
         await expect(
           vault.connect(d.user2).emergencyWithdraw(usdcAddr)
-        ).to.be.revertedWith("UserVault: caller is not owner");
+        ).to.be.revertedWith("TradingAccount: not owner");
       });
 
       it("reverts if no available balance", async function () {
         await expect(
           vault.connect(d.user1).emergencyWithdraw(usdcAddr)
-        ).to.be.revertedWith("UserVault: no available balance");
+        ).to.be.revertedWith("TradingAccount: no balance");
       });
     });
 
@@ -228,13 +228,13 @@ describe("Vaults & Collateral", function () {
       it("only diamond can lock collateral", async function () {
         await expect(
           vault.connect(d.user1).lockCollateral(usdcAddr, 1000, d.user2.address)
-        ).to.be.revertedWith("UserVault: caller is not diamond");
+        ).to.be.revertedWith("TradingAccount: not diamond");
       });
 
       it("only diamond can receive collateral", async function () {
         await expect(
           vault.connect(d.user1).receiveCollateral(usdcAddr, 1000)
-        ).to.be.revertedWith("UserVault: caller is not diamond");
+        ).to.be.revertedWith("TradingAccount: not diamond");
       });
     });
 

@@ -71,6 +71,45 @@ struct MarketOI {
 }
 
 // ============================================================
+//                  SPOT TRADING SUB-STRUCTS (V4)
+// ============================================================
+
+struct SpotMarket {
+    bytes32 marketId;               // keccak256("ETH/USDC") etc.
+    address baseToken;              // e.g., wETH
+    address quoteToken;             // e.g., USDC
+    uint8   mode;                   // 0 = CONTINUOUS, 1 = BATCH
+    bool    active;
+    uint128 minOrderSize;           // min order in base asset units (token decimals)
+    int16   maxOffsetBps;           // max absolute OROB offset from oracle
+    uint16  takerFeeBps;            // taker fee (e.g., 5 = 0.05%)
+    int16   makerRebateBps;         // maker rebate (negative = rebate, e.g., -2 = 0.02% rebate)
+    uint256 batchModeUntilBlock;    // minimum block to stay in BATCH mode (hysteresis)
+}
+
+struct SpotOrder {
+    uint256 id;
+    address trader;
+    bytes32 marketId;
+    uint8   side;                   // 0 = BUY, 1 = SELL
+    uint8   orderType;              // 0 = MARKET, 1 = LIMIT
+    int16   offsetBps;              // OROB offset from oracle price
+    uint128 size;                   // base asset units (token decimals)
+    uint128 filledSize;             // amount already filled
+    uint256 blockSubmitted;
+    bool    active;
+}
+
+struct BatchQueue {
+    int16[]   buyOffsets;
+    uint128[] buySizes;
+    address[] buyTraders;
+    int16[]   sellOffsets;
+    uint128[] sellSizes;
+    address[] sellTraders;
+}
+
+// ============================================================
 //                      APP STORAGE
 // ============================================================
 
@@ -147,6 +186,92 @@ struct AppStorage {
     int256 maxFundingRatePerSecond;          // Absolute cap on funding rate per second (18 dec)
     uint256 maxPriceHistoryLength;          // Circular buffer cap per market (e.g., 1000)
     mapping(address => uint256) collateralPriceFeeds; // token → marketId for stablecoin price (0 = assume $1)
+
+    // ── Borrowing Fee (Phase 3) ──
+    uint256 borrowingFeeRatePerSecond;             // Per-second borrowing rate (18 dec), e.g., 1e10 ≈ 0.03%/hr
+    mapping(uint256 => uint256) lastBorrowingUpdate; // positionId → last borrowing fee timestamp
+    mapping(uint256 => uint256) accruedBorrowingFee; // positionId → accrued but unpaid borrowing fee (USD 18 dec)
+
+    // ── Order Enhancements (Phase 3) ──
+    uint256 defaultOrderTTL;                       // Default order TTL in seconds (e.g., 604800 = 7 days, 0 = no expiry)
+    mapping(uint256 => uint256) orderExpiry;       // orderId → expiry timestamp (0 = no expiry)
+    mapping(uint256 => bool) orderCollateralReserved; // orderId → whether collateral is locked in vault
+
+    // ── Mark Price TWAP (Phase 3) ──
+    mapping(uint256 => PricePoint[]) markPriceHistory; // marketId → rolling mark price history for TWAP
+
+    // ── Oracle Precompile Integration (Phase 4) ──
+    address oraclePrecompile;                      // VOM precompile address (0x903)
+    mapping(uint256 => bytes32) marketVomIds;      // marketId → VOM market identifier (bytes32)
+    uint256 minOracleQuorum;                       // Minimum validator quorum for VOM prices
+    bool usePrecompileOracle;                      // true = read from VOM precompile, false = use legacy push oracle
+
+    // ══════════════════════════════════════════════════════════════
+    //                      SPOT TRADING (V4)
+    // ══════════════════════════════════════════════════════════════
+
+    // ── Spot Markets ──
+    uint256 nextSpotMarketId;
+    mapping(bytes32 => SpotMarket) spotMarkets;
+    bytes32[] activeSpotMarketIds;
+
+    // ── Spot Order Book (OROB) ──
+    uint256 nextSpotOrderId;
+    mapping(uint256 => SpotOrder) spotOrders;
+    mapping(address => uint256[]) userSpotOrderIds;
+    mapping(bytes32 => uint256[]) spotBuyOrderIds;      // marketId → buy order IDs
+    mapping(bytes32 => uint256[]) spotSellOrderIds;     // marketId → sell order IDs
+
+    // ── Batch Auction ──
+    mapping(bytes32 => BatchQueue) spotBatchQueues;
+    mapping(bytes32 => uint256) spotBatchBlock;         // marketId → last cleared block
+
+    // ── Diamond-Owned Spot Vault (real token backing) ──
+    mapping(address => uint256) spotVaultBalances;      // token → actual ERC-20 held by diamond for spot
+    // INVARIANT: IERC20(t).balanceOf(diamond) >= vaultBalances[t] + spotVaultBalances[t] + insuranceBalances[t]
+
+    // ── Non-Stablecoin Token Whitelist ──
+    mapping(address => bool) spotAcceptedTokens;        // wBTC, wETH, wSOL, WPAX, USDC, etc.
+    mapping(address => uint8) spotTokenDecimals;
+    address[] spotTokenList;
+
+    // ── Virtual Balances & Settlement ──
+    mapping(address => mapping(address => int256))  spotVirtualBalances;      // user → token → signed virtual balance
+    mapping(address => mapping(address => uint256)) spotDepositedCollateral;  // user → token → deposited raw amount
+    mapping(address => mapping(address => int256))  spotEpochNetDelta;        // user → token → epoch net change
+    address[] spotEpochDirtyUsers;
+    mapping(address => bool) spotIsEpochDirty;
+    uint256 spotEpochLength;                            // blocks per epoch (e.g., 5 = ~10s)
+    uint256 spotCurrentEpochStart;
+    uint256 spotEpochCounter;
+    uint256 spotFastSettleFeeBps;                       // default: 1 bps
+
+    // ── PoFQ Reputation ──
+    mapping(address => uint256) spotPoFQScores;
+    mapping(address => uint256) spotPoFQWeights;
+    uint16 spotPoFQDecayBps;                            // decay per update (e.g., 100 = 1%)
+
+    // ── PLV Registry ──
+    address[] registeredPLVs;
+    mapping(address => bool) isPLVRegistered;
+    mapping(address => uint256) plvPoFQScores;
+    mapping(address => uint256) plvPoFQWeights;
+
+    // ── Autonomous Mode Switching ──
+    mapping(bytes32 => uint256) spotVolatilityRolling;
+    mapping(bytes32 => uint256) spotVolumeRolling;
+    uint256 spotBatchModeVolThreshold;                  // 3σ volume trigger
+    uint256 spotBatchModeConfidenceThreshold;           // min oracle confidence for continuous
+
+    // ── Fee Tiers (Volume Percentile Scale) ──
+    mapping(address => uint256) spotTraderVolume30d;    // trader → rolling 30-day volume (USD 18 dec)
+    mapping(address => uint8)   spotFeeTier;            // trader → tier (0=standard, 1=P75, 2=P90, 3=P99)
+    uint256[4] spotFeeTierRebateBps;                    // tier → rebate bps [0, 1500, 3000, 5000]
+    uint256[4] spotFeeTierThresholds;                   // tier → min volume threshold (updated by keeper)
+
+    // ── Anti-Gaming ──
+    mapping(address => mapping(bytes32 => int256)) spotNetFlow;  // trader → market → net buy-sell volume
+    uint16 spotMinSpreadBps;                                     // min offset magnitude (anti-wash)
 }
 
 // ============================================================

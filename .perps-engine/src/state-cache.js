@@ -97,7 +97,7 @@ class StateCache {
 
   async _refreshOrdersFromIndexer() {
     const query = `{
-      orders(status: "active", limit: 1000) {
+      orders(limit: 1000) {
         orderId
         userAddress
         marketId
@@ -105,11 +105,12 @@ class StateCache {
         isLong
         triggerPrice
         sizeUsd
+        status
       }
     }`;
 
     const resp = await this._graphqlQuery(query);
-    const orders = resp.data.orders || [];
+    const orders = (resp.data.orders || []).filter(o => o.status === "active");
     this.activeOrders.clear();
 
     for (const o of orders) {
@@ -128,10 +129,9 @@ class StateCache {
   }
 
   async _refreshOrdersFromChain() {
-    // Minimal fallback — read recent OrderPlaced events
     try {
       const currentBlock = await this.submitter.provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 50000);
+      const fromBlock = Math.max(0, currentBlock - 5000);
 
       const filter = this.submitter.diamond.filters.OrderPlaced?.();
       if (!filter) {
@@ -139,7 +139,7 @@ class StateCache {
         return;
       }
 
-      const events = await this.submitter.diamond.queryFilter(filter, fromBlock, currentBlock);
+      const events = await this._queryFilterChunked(filter, fromBlock, currentBlock);
       const candidateIds = new Set();
       for (const event of events) {
         candidateIds.add(BigInt(event.args[0]));
@@ -203,19 +203,20 @@ class StateCache {
 
   async _refreshPositionsFromIndexer() {
     const query = `{
-      positions(status: "open", limit: 5000) {
+      positions(limit: 5000) {
         positionId
         userAddress
         marketId
         isLong
         sizeUsd
         entryPrice
-        collateralUsd
+        collateralAmount
+        status
       }
     }`;
 
     const resp = await this._graphqlQuery(query);
-    const positions = resp.data.positions || [];
+    const positions = (resp.data.positions || []).filter(p => p.status === "open");
     this.activePositions.clear();
 
     for (const p of positions) {
@@ -234,7 +235,7 @@ class StateCache {
           isLong: p.isLong,
           sizeUsd: BigInt(p.sizeUsd),
           entryPrice: BigInt(p.entryPrice),
-          collateralUsd: BigInt(p.collateralUsd),
+          collateralUsd: BigInt(p.collateralAmount || "0"),
           active: true,
         });
       }
@@ -248,7 +249,7 @@ class StateCache {
   async _refreshPositionsFromChain() {
     try {
       const currentBlock = await this.submitter.provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 100000);
+      const fromBlock = Math.max(0, currentBlock - 5000);
 
       const filter = this.submitter.diamond.filters.PositionOpened?.();
       if (!filter) {
@@ -256,7 +257,7 @@ class StateCache {
         return;
       }
 
-      const events = await this.submitter.diamond.queryFilter(filter, fromBlock, currentBlock);
+      const events = await this._queryFilterChunked(filter, fromBlock, currentBlock);
       const candidateIds = new Set();
       for (const event of events) {
         candidateIds.add(BigInt(event.args[0]));
@@ -282,6 +283,28 @@ class StateCache {
         `  Failed to refresh positions from chain: ${err.message}`
       );
     }
+  }
+
+  // ============================================================
+  //  CHUNKED LOG QUERY (RPC block range workaround)
+  // ============================================================
+
+  async _queryFilterChunked(filter, fromBlock, toBlock, chunkSize = 500) {
+    const allEvents = [];
+    let cursor = fromBlock;
+
+    while (cursor <= toBlock) {
+      const end = Math.min(cursor + chunkSize - 1, toBlock);
+      try {
+        const events = await this.submitter.diamond.queryFilter(filter, cursor, end);
+        allEvents.push(...events);
+      } catch (err) {
+        this.logger.debug(`  Log chunk ${cursor}-${end} failed: ${err.message}`);
+      }
+      cursor = end + 1;
+    }
+
+    return allEvents;
   }
 
   // ============================================================
@@ -340,7 +363,7 @@ class StateCache {
     if (this.indexerAvailable) return;
 
     try {
-      const resp = await this._graphqlQuery("{ indexerStatus { isSynced } }");
+      const resp = await this._graphqlQuery("{ markets { id } }");
       if (resp.data) {
         this.indexerAvailable = true;
         this.logger.info("  Indexer reconnected");

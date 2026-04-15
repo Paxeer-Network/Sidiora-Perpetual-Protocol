@@ -290,6 +290,32 @@ contract TradingAccount is ITradingAccount {
     }
 
     /// @inheritdoc ITradingAccount
+    function reserveForOrder(
+        address _token,
+        uint256 _amount,
+        uint256 _orderId
+    ) external override onlyDiamond onlyInit {
+        require(_amount > 0, "TradingAccount: zero reserve");
+        uint256 available = _availableBalance(_token);
+        require(_amount <= available, "TradingAccount: insufficient balance for reservation");
+        // Lock the amount so withdraw() sees reduced available balance
+        _totalLocked[_token] += _amount;
+    }
+
+    /// @inheritdoc ITradingAccount
+    function releaseReservation(
+        address _token,
+        uint256 _amount,
+        uint256 _orderId
+    ) external override onlyDiamond onlyInit {
+        if (_totalLocked[_token] >= _amount) {
+            _totalLocked[_token] -= _amount;
+        } else {
+            _totalLocked[_token] = 0;
+        }
+    }
+
+    /// @inheritdoc ITradingAccount
     function recordFee(address _token, uint256 _amount, uint256 _positionId) external override onlyDiamond onlyInit {
         if (_amount > 0) {
             _recordLedger(uint8(LedgerEntryType.FEE_PAID), _token, _amount, _positionId, true);

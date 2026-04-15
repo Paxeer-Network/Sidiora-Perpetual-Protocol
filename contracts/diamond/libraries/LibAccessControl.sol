@@ -18,6 +18,7 @@ library LibAccessControl {
     bytes32 constant INSURANCE_ADMIN_ROLE = keccak256("INSURANCE_ADMIN");
     bytes32 constant PAUSER_ROLE = keccak256("PAUSER");
     bytes32 constant PROTOCOL_FUNDER_ROLE = keccak256("PROTOCOL_FUNDER");
+    bytes32 constant SPOT_ADMIN_ROLE = keccak256("SPOT_ADMIN");
 
     // ============================================================
     //                          EVENTS

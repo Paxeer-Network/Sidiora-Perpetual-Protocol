@@ -55,6 +55,7 @@ async function deployFullDiamond() {
     "FundingRateFacet",
     "InsuranceFundFacet",
     "QuoterFacet",
+    "KeeperMulticallFacet",
   ];
 
   const facetContracts = {};
@@ -118,7 +119,12 @@ async function deployFullDiamond() {
   const dai = await MockERC20.deploy("Dai Stablecoin", "DAI", 18);
   await dai.waitForDeployment();
 
-  // --- Deploy UserVault implementation ---
+  // --- Deploy TradingAccount implementation (replaces UserVault) ---
+  const TradingAccount = await ethers.getContractFactory("TradingAccount");
+  const tradingAccountImpl = await TradingAccount.deploy();
+  await tradingAccountImpl.waitForDeployment();
+
+  // --- Keep UserVault available for backward-compat tests ---
   const UserVault = await ethers.getContractFactory("UserVault");
   const userVaultImpl = await UserVault.deploy();
   await userVaultImpl.waitForDeployment();
@@ -148,6 +154,7 @@ async function deployFullDiamond() {
     usdt,
     dai,
     userVaultImpl,
+    tradingAccountImpl,
     facetContracts,
     owner,
     user1,
@@ -183,8 +190,8 @@ async function setupFullProtocol(d) {
   await accessControl.grantRole(PROTOCOL_FUNDER, funder.address);
   await accessControl.grantRole(INSURANCE_ADMIN, owner.address);
 
-  // --- Set vault implementation ---
-  await vaultFactory.setImplementation(await userVaultImpl.getAddress());
+  // --- Set vault implementation (TradingAccount) ---
+  await vaultFactory.setImplementation(await d.tradingAccountImpl.getAddress());
 
   // --- Add collateral tokens ---
   await collateral.addCollateral(await usdc.getAddress());

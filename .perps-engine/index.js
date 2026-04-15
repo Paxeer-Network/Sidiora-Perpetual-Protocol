@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { MARKETS, PYTH_MARKETS, ORDERLY_MARKETS, CONFIG, COMBINED_ABI } = require("./config");
-const { PythFetcher } = require("./src/price-sources/pyth-fetcher");
+const { MARKETS, CONFIG, COMBINED_ABI } = require("./config");
 const { OrderlyFetcher } = require("./src/price-sources/orderly-fetcher");
+const { CustomFetcher } = require("./src/price-sources/custom-fetcher");
 const { OrderScanner } = require("./src/scanners/order-scanner");
 const { LiquidationScanner } = require("./src/scanners/liquidation-scanner");
 const { CycleBuilder } = require("./src/cycle-builder");
@@ -16,8 +16,8 @@ const path = require("path");
 /**
  * PPMM Perps Engine — Unified Oracle + Keeper
  *
- * Every ~10 seconds:
- *   1. Fetch prices from Pyth (crypto) + Orderly (stocks/indices/commodities) in parallel
+ * Every ~3 seconds:
+ *   1. Fetch prices from Orderly (crypto/stocks) + custom feeds (SID/PAX)
  *   2. Scan cached orders for trigger conditions
  *   3. Scan cached positions for liquidation conditions
  *   4. Submit executeCycle() or executePriceCycle() — single atomic tx
@@ -49,15 +49,12 @@ async function main() {
     process.exit(1);
   }
 
-  logger.info(`  Pyth endpoint:    ${CONFIG.pythHermesUrl}`);
   logger.info(`  Orderly endpoint: ${CONFIG.orderlyBaseUrl}`);
   logger.info(`  RPC:              ${CONFIG.rpcUrl}`);
   logger.info(`  Diamond:          ${CONFIG.diamondAddress}`);
   logger.info(`  Indexer:          ${CONFIG.indexerUrl}`);
   logger.info(`  Cycle interval:   ${CONFIG.cycleIntervalMs}ms`);
-  logger.info(`  Pyth markets:     ${PYTH_MARKETS.map((m) => m.symbol).join(", ")}`);
-  logger.info(`  Orderly markets:  ${ORDERLY_MARKETS.map((m) => m.symbol).join(", ")}`);
-  logger.info(`  Total markets:    ${MARKETS.length}`);
+  logger.info(`  Markets (${MARKETS.length}):   ${MARKETS.map((m) => m.symbol).join(", ")}`);
   logger.info("");
 
   // ── Initialize components ──────────────────────────────────
@@ -65,10 +62,10 @@ async function main() {
   const submitter = new Submitter(CONFIG, COMBINED_ABI, logger);
   const stateCache = new StateCache(CONFIG, submitter, MARKETS, logger);
   const healthMonitor = new HealthMonitor(CONFIG, submitter, logger);
-  const pythFetcher = new PythFetcher(CONFIG.pythHermesUrl, PYTH_MARKETS, logger);
-  const orderlyFetcher = ORDERLY_MARKETS.length > 0
-    ? new OrderlyFetcher(CONFIG.orderlyBaseUrl, ORDERLY_MARKETS, logger)
-    : null;
+  const orderlyMarkets = MARKETS.filter((m) => m.source === "orderly");
+  const customMarkets = MARKETS.filter((m) => m.source === "custom");
+  const orderlyFetcher = new OrderlyFetcher(CONFIG.orderlyBaseUrl, orderlyMarkets, logger);
+  const customFetcher = customMarkets.length > 0 ? new CustomFetcher(customMarkets, logger) : null;
   const orderScanner = new OrderScanner(stateCache, logger);
   const liquidationScanner = new LiquidationScanner(stateCache, logger);
   const cycleBuilder = new CycleBuilder(logger);
@@ -126,37 +123,36 @@ async function main() {
 
       // --- 1. Fetch prices from all sources in parallel ---
       const fetchPromises = [
-        pythFetcher.fetchPrices().catch((err) => {
-          logger.error(`  [Cycle ${cycleCount}] Pyth fetch error: ${err.message}`);
+        orderlyFetcher.fetchPrices().catch((err) => {
+          logger.error(`  [Cycle ${cycleCount}] Orderly fetch error: ${err.message}`);
           return [];
         }),
       ];
 
-      if (orderlyFetcher) {
+      if (customFetcher) {
         fetchPromises.push(
-          orderlyFetcher.fetchPrices().catch((err) => {
-            logger.error(`  [Cycle ${cycleCount}] Orderly fetch error: ${err.message}`);
+          customFetcher.fetchPrices().catch((err) => {
+            logger.error(`  [Cycle ${cycleCount}] Custom fetch error: ${err.message}`);
             return [];
           })
         );
       }
 
-      const [pythPrices, orderlyPrices = []] = await Promise.all(fetchPromises);
-      const allPrices = [...pythPrices, ...orderlyPrices];
+      const [orderlyPrices, customPrices = []] = await Promise.all(fetchPromises);
+      const allPrices = [...orderlyPrices, ...customPrices];
 
       if (allPrices.length === 0) {
         logger.warn(`  [Cycle ${cycleCount}] No prices fetched — skipping`);
         return; // exit IIFE
       }
 
-      // Log prices
-      if (pythPrices.length > 0) {
-        const str = pythPrices.map((p) => `${p.symbol}=$${p.rawPrice.toFixed(2)}`).join(" | ");
-        logger.info(`  Pyth (${pythPrices.length}): ${str}`);
-      }
       if (orderlyPrices.length > 0) {
         const str = orderlyPrices.map((p) => `${p.symbol}=$${p.rawPrice.toFixed(2)}`).join(" | ");
         logger.info(`  Orderly (${orderlyPrices.length}): ${str}`);
+      }
+      if (customPrices.length > 0) {
+        const str = customPrices.map((p) => `${p.symbol}=$${p.rawPrice.toFixed(2)}`).join(" | ");
+        logger.info(`  Custom (${customPrices.length}): ${str}`);
       }
 
       // --- 2. Update price cache ---
@@ -171,6 +167,7 @@ async function main() {
       // --- 5. Build and submit cycle ---
       const cycle = cycleBuilder.buildFullCycle(allPrices, triggeredOrderIds, liquidatableIds);
       let result;
+      let fullCycleSucceeded = false;
 
       if (cycle.isFullCycle) {
         logger.info(
@@ -183,6 +180,21 @@ async function main() {
           cycle.orderIds,
           cycle.liquidationIds
         );
+
+        if (result.success) {
+          fullCycleSucceeded = true;
+        } else {
+          logger.warn(
+            `  [Cycle ${cycleCount}] executeCycle failed, falling back to executePriceCycle so prices still update on-chain`
+          );
+          const priceFallback = await submitter.submitPriceCycle(cycle.marketIds, cycle.prices);
+          if (priceFallback.success) {
+            logger.info(`  [Cycle ${cycleCount}] Price fallback succeeded: ${priceFallback.txHash}`);
+          } else {
+            logger.error(`  [Cycle ${cycleCount}] Price fallback failed: ${priceFallback.error}`);
+          }
+          result = priceFallback;
+        }
       } else {
         logger.debug(`  Submitting executePriceCycle: ${cycle.marketIds.length} markets`);
         result = await submitter.submitPriceCycle(cycle.marketIds, cycle.prices);
@@ -194,12 +206,15 @@ async function main() {
           submitter.submittedPrices.set(p.symbol, p.price);
         }
 
-        // Remove executed orders/liquidations from cache
-        for (const id of triggeredOrderIds) {
-          stateCache.removeOrder(id);
-        }
-        for (const id of liquidatableIds) {
-          stateCache.removePosition(id);
+        // Remove executed orders/liquidations only when full executeCycle succeeds.
+        // Price-only fallback updates prices/funding but does not execute orders/liquidations.
+        if (fullCycleSucceeded) {
+          for (const id of triggeredOrderIds) {
+            stateCache.removeOrder(id);
+          }
+          for (const id of liquidatableIds) {
+            stateCache.removePosition(id);
+          }
         }
       } else {
         logger.error(`  [Cycle ${cycleCount}] Submission failed: ${result.error}`);

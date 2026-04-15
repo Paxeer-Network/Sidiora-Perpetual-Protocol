@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.27;
 
-import {AppStorage, VirtualPool, appStorage} from "../../storage/AppStorage.sol";
+import {AppStorage, VirtualPool, PricePoint, appStorage} from "../../storage/AppStorage.sol";
 import {LibAccessControl} from "../../libraries/LibAccessControl.sol";
 import {LibMath} from "../../libraries/LibMath.sol";
 
@@ -87,6 +87,10 @@ contract VirtualAMMFacet {
 
         pool.quoteReserve = newQuote;
         pool.lastSyncTimestamp = block.timestamp;
+
+        // Record mark price for TWAP history (used by FundingRateFacet)
+        uint256 newMarkPrice = LibMath.divFp(newQuote, pool.baseReserve);
+        s.markPriceHistory[_marketId].push(PricePoint({price: newMarkPrice, timestamp: block.timestamp}));
 
         emit PoolSynced(_marketId, pool.baseReserve, newQuote, oraclePrice);
     }

@@ -91,3 +91,14 @@ coverage-js/
 .cache/
 tmp/
 temp/
+schema.graphql
+INITIAL.md
+HANDOFF-SPOT-IMPLEMENTATION.md
+Improving Trading System Analysis.md
+ARCHITECTURE-SPOT.md
+HANDOFF-INFRA-REDESIGN.md
+server-candle/
+integration-kit/
+development/
+.windsurf/
+docs/

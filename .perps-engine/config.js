@@ -4,49 +4,27 @@ require("dotenv").config({ path: __dirname + "/.env" });
 //  MARKET → PRICE SOURCE MAPPING
 // ============================================================
 
-const PYTH_MARKETS = [
-  {
-    marketId: 0,
-    symbol: "BTC",
-    source: "pyth",
-    pythId: "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
-  },
-  {
-    marketId: 1,
-    symbol: "ETH",
-    source: "pyth",
-    pythId: "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
-  },
-  {
-    marketId: 2,
-    symbol: "SOL",
-    source: "pyth",
-    pythId: "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
-  },
-  {
-    marketId: 3,
-    symbol: "AVAX",
-    source: "pyth",
-    pythId: "0x93da3352f9f1d105fdfe4971cfa80e9dd777bfc5d0f683ebb6e1294b92137bb7",
-  },
-  {
-    marketId: 4,
-    symbol: "LINK",
-    source: "pyth",
-    pythId: "0x8ac0c70fff57e9aefdf5edf44b51d62c2d433653cbb2cf5cc06bb115af04d221",
-  },
-];
-
-const ORDERLY_MARKETS = [
+const MARKETS = [
+  { marketId: 0, symbol: "BTC", source: "orderly", orderlySymbol: "PERP_BTC_USDC" },
+  { marketId: 1, symbol: "ETH", source: "orderly", orderlySymbol: "PERP_ETH_USDC" },
+  { marketId: 2, symbol: "SOL", source: "orderly", orderlySymbol: "PERP_SOL_USDC" },
+  { marketId: 3, symbol: "AVAX", source: "orderly", orderlySymbol: "PERP_AVAX_USDC" },
+  { marketId: 4, symbol: "LINK", source: "orderly", orderlySymbol: "PERP_LINK_USDC" },
   { marketId: 5, symbol: "TSLA", source: "orderly", orderlySymbol: "PERP_TSLA_USDC" },
   { marketId: 6, symbol: "NVDA", source: "orderly", orderlySymbol: "PERP_NVDA_USDC" },
   { marketId: 7, symbol: "NAS100", source: "orderly", orderlySymbol: "PERP_NAS100_USDC" },
   { marketId: 8, symbol: "XAU", source: "orderly", orderlySymbol: "PERP_XAU_USDC" },
   { marketId: 9, symbol: "SPX500", source: "orderly", orderlySymbol: "PERP_SPX500_USDC" },
   { marketId: 10, symbol: "GOOGL", source: "orderly", orderlySymbol: "PERP_GOOGL_USDC" },
-];
+  { marketId: 11, symbol: "PAX", source: "custom", priceUrl: "https://radiant-harmony-production.up.railway.app/price" },
+  { marketId: 12, symbol: "SID", source: "custom", priceUrl: "https://feisty-caring-production-6368.up.railway.app/price" },
+  { marketId: 13, symbol: "HYPE", source: "orderly", orderlySymbol: "PERP_HYPE_USDC" },
+  { marketId: 14, symbol: "XRP", source: "orderly", orderlySymbol: "PERP_XRP_USDC" },
+  { marketId: 15, symbol: "ASTER", source: "orderly", orderlySymbol: "PERP_ASTER_USDC" },
+  { marketId: 16, symbol: "TRUMP", source: "orderly", orderlySymbol: "PERP_TRUMP_USDC" },
+  { marketId: 17, symbol: "BNB", source: "orderly", orderlySymbol: "PERP_BNB_USDC" },
 
-const MARKETS = [...PYTH_MARKETS, ...ORDERLY_MARKETS];
+];
 
 // ============================================================
 //  ENGINE CONFIGURATION
@@ -58,16 +36,16 @@ const CONFIG = {
   orderlyBaseUrl: process.env.ORDERLY_BASE_URL || "https://api-evm.orderly.org",
 
   // Paxeer Network
-  rpcUrl: process.env.RPC_URL || "https://public-rpc.paxeer.app/rpc",
+  rpcUrl: process.env.RPC_URL || "https://",
   diamondAddress: process.env.DIAMOND_ADDRESS || "0xeA65FE02665852c615774A3041DFE6f00fb77537",
   privateKey: process.env.ORACLE_PRIVATE_KEY,
 
   // Indexer GraphQL
-  indexerUrl: process.env.INDEXER_GRAPHQL_URL || "http://localhost:4000/graphql",
+  indexerUrl: process.env.INDEXER_GRAPHQL_URL || "https://api-production-5335.up.railway.app/graphql",
 
   // Cycle timing
-  cycleIntervalMs: Number(process.env.CYCLE_INTERVAL_MS) || 10000,
-  cycleTimeoutMs: Number(process.env.CYCLE_TIMEOUT_MS) || 30000,
+  cycleIntervalMs: Number(process.env.CYCLE_INTERVAL_MS) || 3000,
+  cycleTimeoutMs: Number(process.env.CYCLE_TIMEOUT_MS) || 15000,
 
   // Cache refresh intervals (ms)
   orderRefreshMs: Number(process.env.ORDER_REFRESH_MS) || 30000,
@@ -78,7 +56,7 @@ const CONFIG = {
   deviationThresholdPct: Number(process.env.DEVIATION_THRESHOLD_PCT) || 0.5,
 
   // Gas
-  gasLimit: Number(process.env.GAS_LIMIT) || 2000000,
+  gasLimit: Number(process.env.GAS_LIMIT) || 9000000,
   maxFeePerGas: process.env.MAX_FEE_PER_GAS || undefined,
 
   // Retry
@@ -161,8 +139,6 @@ const ORDER_TYPE = {
 
 module.exports = {
   MARKETS,
-  PYTH_MARKETS,
-  ORDERLY_MARKETS,
   CONFIG,
   KEEPER_MULTICALL_ABI,
   READ_ABI,

@@ -117,9 +117,8 @@ library LibPosition {
     ) internal pure returns (uint256 newEntryPrice) {
         uint256 totalSize = _existingSize + _addedSize;
         if (totalSize == 0) return 0;
-        newEntryPrice = (
-            LibMath.mulFp(_existingSize, _existingEntryPrice) +
-            LibMath.mulFp(_addedSize, _addedPrice)
-        ) / totalSize * 1e18;
+        uint256 weightedSum = LibMath.mulFp(_existingSize, _existingEntryPrice) +
+            LibMath.mulFp(_addedSize, _addedPrice);
+        newEntryPrice = LibMath.divFp(weightedSum, totalSize);
     }
 }
