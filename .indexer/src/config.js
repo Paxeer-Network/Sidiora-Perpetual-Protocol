@@ -4,11 +4,11 @@ const CONFIG = {
   db: {
     connectionString: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/ppmm_indexer",
   },
-  rpcUrl: process.env.RPC_URL || "https://public-rpc.paxeer.app/rpc",
+  rpcUrl: process.env.RPC_URL || "https://public-mainnet.rpcpaxeer.online/app",
   diamondAddress: process.env.DIAMOND_ADDRESS || "0xeA65FE02665852c615774A3041DFE6f00fb77537",
   startBlock: Number(process.env.START_BLOCK) || 1301600,
-  batchSize: Number(process.env.BATCH_SIZE) || 900,
-  pollIntervalMs: Number(process.env.POLL_INTERVAL_MS) || 3000,
+  batchSize: Number(process.env.BATCH_SIZE) || 5000,
+  pollIntervalMs: Number(process.env.POLL_INTERVAL_MS) || 1000,
   graphqlPort: Number(process.env.GRAPHQL_PORT) || 4000,
   logLevel: process.env.LOG_LEVEL || "info",
 };
