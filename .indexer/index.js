@@ -12,18 +12,20 @@ const pruner             = require("./src/db/pruner");
 const { pool }           = require("./src/db/pool");
 
 async function main() {
-  const verbose = process.argv.includes("--verbose");
-  const logger  = createLogger(verbose ? "debug" : CONFIG.logLevel);
+  const verbose   = process.argv.includes("--verbose");
+  const logger    = createLogger(verbose ? "debug" : CONFIG.logLevel);
+  const role      = (process.env.ROLE || "all").toLowerCase();
+  const withGQL   = role !== "indexer";
 
   logger.info("═══════════════════════════════════════════════════════");
-  logger.info("  PPMM Indexer — EVM eth_getLogs + GraphQL API");
+  logger.info(`  PPMM Indexer — EVM eth_getLogs${withGQL ? " + GraphQL API" : " (indexer-only)"}`);
   logger.info("═══════════════════════════════════════════════════════");
   CONFIG.rpcUrls.forEach((u, i) => logger.info(`  RPC[${i}]:      ${u}`));
   logger.info(`  Diamond:     ${CONFIG.diamondAddress}`);
   logger.info(`  Start block: ${CONFIG.startBlock}`);
   logger.info(`  Batch size:  ${CONFIG.batchSize}`);
   logger.info(`  Poll:        ${CONFIG.pollIntervalMs}ms`);
-  logger.info(`  GraphQL:     port ${CONFIG.graphqlPort}`);
+  if (withGQL) logger.info(`  GraphQL:     port ${CONFIG.graphqlPort}`);
   logger.info("");
 
   // 1. Migrations
@@ -42,10 +44,12 @@ async function main() {
   // 3. Scanner
   const scanner = new Scanner(CONFIG, logger);
 
-  // 4. GraphQL server
-  logger.info("");
-  logger.info("Starting GraphQL server...");
-  await startGraphQLServer(CONFIG.graphqlPort, scanner, logger);
+  // 4. GraphQL server (skipped when ROLE=indexer)
+  if (withGQL) {
+    logger.info("");
+    logger.info("Starting GraphQL server...");
+    await startGraphQLServer(CONFIG.graphqlPort, scanner, logger);
+  }
 
   // 5. Health surface
   let lastScanAt  = Date.now();
