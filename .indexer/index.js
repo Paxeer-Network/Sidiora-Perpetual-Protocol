@@ -1,41 +1,32 @@
 #!/usr/bin/env node
 
-const { CONFIG } = require("./src/config");
-const { createLogger } = require("./src/logger");
-const { Scanner } = require("./src/scanner");
-const { migrate } = require("./src/db/migrate");
+const { CONFIG }         = require("./src/config");
+const { createLogger }   = require("./src/logger");
+const { Scanner }        = require("./src/scanner");
+const { HealthServer }   = require("./src/health-server");
+const { migrate }        = require("./src/db/migrate");
 const { getLastIndexedBlock, setLastIndexedBlock } = require("./src/db/models");
 const { startGraphQLServer } = require("./src/graphql/server");
-
-/**
- * PPMM Indexer
- *
- * 1. Runs DB migrations on startup
- * 2. Starts the GraphQL API server
- * 3. Scans historical blocks in batches to catch up
- * 4. Polls for new blocks continuously
- *
- * Usage:
- *   node index.js             # Normal mode
- *   node index.js --verbose   # Debug logging
- */
+const { notify }         = require("./src/db/pubsub");
+const pruner             = require("./src/db/pruner");
+const { pool }           = require("./src/db/pool");
 
 async function main() {
   const verbose = process.argv.includes("--verbose");
-  const logger = createLogger(verbose ? "debug" : CONFIG.logLevel);
+  const logger  = createLogger(verbose ? "debug" : CONFIG.logLevel);
 
   logger.info("═══════════════════════════════════════════════════════");
-  logger.info("  PPMM Indexer — On-Chain Event Indexer + GraphQL API");
+  logger.info("  PPMM Indexer — EVM eth_getLogs + GraphQL API");
   logger.info("═══════════════════════════════════════════════════════");
-  logger.info(`  RPC:        ${CONFIG.rpcUrl}`);
-  logger.info(`  Diamond:    ${CONFIG.diamondAddress}`);
+  CONFIG.rpcUrls.forEach((u, i) => logger.info(`  RPC[${i}]:      ${u}`));
+  logger.info(`  Diamond:     ${CONFIG.diamondAddress}`);
   logger.info(`  Start block: ${CONFIG.startBlock}`);
   logger.info(`  Batch size:  ${CONFIG.batchSize}`);
-  logger.info(`  Poll interval: ${CONFIG.pollIntervalMs}ms`);
-  logger.info(`  GraphQL port:  ${CONFIG.graphqlPort}`);
+  logger.info(`  Poll:        ${CONFIG.pollIntervalMs}ms`);
+  logger.info(`  GraphQL:     port ${CONFIG.graphqlPort}`);
   logger.info("");
 
-  // --- 1. Run migrations ---
+  // 1. Migrations
   logger.info("Running database migrations...");
   try {
     await migrate(false);
@@ -45,108 +36,124 @@ async function main() {
     process.exit(1);
   }
 
-  // --- 2. Initialize scanner ---
+  // 2. Pruner
+  pruner.start(logger);
+
+  // 3. Scanner
   const scanner = new Scanner(CONFIG, logger);
 
-  // --- 3. Start GraphQL server ---
+  // 4. GraphQL server
   logger.info("");
   logger.info("Starting GraphQL server...");
   await startGraphQLServer(CONFIG.graphqlPort, scanner, logger);
+
+  // 5. Health surface
+  let lastScanAt  = Date.now();
+  let currentCursor = 0;
+  const healthServer = new HealthServer({
+    port: CONFIG.healthPort,
+    scanner,
+    logger,
+    getCurrentBlock: () => currentCursor,
+    getLastScanAt:   () => lastScanAt,
+  });
+  await healthServer.start();
   logger.info("");
 
-  // --- 4. Determine starting block ---
+  // 6. Cursor bootstrap
   let lastIndexed = await getLastIndexedBlock();
   if (lastIndexed < CONFIG.startBlock) {
     lastIndexed = CONFIG.startBlock - 1;
     await setLastIndexedBlock(lastIndexed);
   }
+  currentCursor = lastIndexed;
 
-  const chainHead = await scanner.getChainHead();
-  const behind = chainHead - lastIndexed;
-
+  const initialHead = await scanner.getChainHead();
   logger.info(`  Last indexed block: ${lastIndexed}`);
-  logger.info(`  Chain head:         ${chainHead}`);
-  logger.info(`  Blocks behind:      ${behind}`);
+  logger.info(`  Chain head:         ${initialHead}`);
+  logger.info(`  Blocks behind:      ${initialHead - lastIndexed}`);
   logger.info("");
 
-  // --- Graceful shutdown ---
+  // Graceful shutdown
   let running = true;
-  const shutdown = (signal) => {
-    logger.info(`\n${signal} received — shutting down...`);
-    running = false;
-  };
-  process.on("SIGINT", () => shutdown("SIGINT"));
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT",  () => { logger.info("\nSIGINT — shutting down..."); running = false; });
+  process.on("SIGTERM", () => { logger.info("\nSIGTERM — shutting down..."); running = false; });
 
-  // --- 5. Catch-up phase ---
-  if (behind > 0) {
+  const safeScan = async (from, to) => {
+    try {
+      const result = await scanner.scanBlocks(from, to);
+      const advanceTo = result?.effectiveTo ?? to;
+      await setLastIndexedBlock(advanceTo);
+      currentCursor = advanceTo;
+      lastScanAt    = Date.now();
+      notify(pool, "block_committed", { blockNumber: advanceTo, eventsCount: result?.events || 0 }).catch(() => {});
+      return advanceTo;
+    } catch (err) {
+      logger.error(`Scan error at ${from}-${to}: ${err.message}`);
+      throw err;
+    }
+  };
+
+  // 7. Catchup
+  if (initialHead > lastIndexed) {
     logger.info("Starting historical sync...");
     let from = lastIndexed + 1;
+    let head = initialHead;
 
-    while (from <= chainHead && running) {
-      const to = Math.min(from + CONFIG.batchSize - 1, chainHead);
+    while (from <= head && running) {
+      const to = Math.min(from + CONFIG.batchSize - 1, head);
       try {
-        await scanner.scanBlocks(from, to);
-        await setLastIndexedBlock(to);
-        from = to + 1;
-      } catch (err) {
-        logger.error(`Scan error at ${from}-${to}: ${err.message}`);
-        await sleep(1000);
+        const next = await safeScan(from, to);
+        from = next + 1;
+      } catch {
+        await sleep(2000);
+      }
+      if (from > head) {
+        try { head = await scanner.getChainHead(); } catch {}
       }
     }
 
     if (running) {
-      const stats = scanner.getStats();
-      logger.info("");
-      logger.info(`  ✓ Historical sync complete — ${stats.eventsProcessed} events indexed`);
+      const s = scanner.getStats();
+      logger.info(`  ✓ Sync complete — ${s.eventsProcessed} events indexed`);
       logger.info("");
     }
   }
 
-  // --- 6. Live polling ---
-  logger.info("Entering live polling mode...\n");
-  let currentBlock = await getLastIndexedBlock();
-
+  // 8. Live mode — simple poll
+  logger.info("Entering live mode...\n");
   while (running) {
     try {
       const head = await scanner.getChainHead();
-
-      if (head > currentBlock) {
-        const from = currentBlock + 1;
-        const to = Math.min(from + CONFIG.batchSize - 1, head);
-
-        await scanner.scanBlocks(from, to);
-        await setLastIndexedBlock(to);
-        currentBlock = to;
+      if (head > currentCursor) {
+        const from = currentCursor + 1;
+        const to   = Math.min(from + CONFIG.batchSize - 1, head);
+        await safeScan(from, to);
+      } else {
+        lastScanAt = Date.now();
+        await sleep(CONFIG.pollIntervalMs);
       }
     } catch (err) {
-      logger.error(`Poll error: ${err.message}`);
-    }
-
-    if (running) {
-      await sleep(CONFIG.pollIntervalMs);
+      logger.error(`Live mode error: ${err.message}`);
+      await sleep(2000);
     }
   }
 
-  // --- Shutdown summary ---
-  const stats = scanner.getStats();
-  logger.info("");
+  // 9. Shutdown
+  const s = scanner.getStats();
   logger.info("═══════════════════════════════════════════════════════");
   logger.info("  Indexer Stopped");
-  logger.info("═══════════════════════════════════════════════════════");
-  logger.info(`  Blocks scanned:    ${stats.blocksScanned}`);
-  logger.info(`  Events processed:  ${stats.eventsProcessed}`);
-  logger.info(`  Errors:            ${stats.errors}`);
+  logger.info(`  Blocks scanned:   ${s.blocksScanned}`);
+  logger.info(`  Events processed: ${s.eventsProcessed}`);
+  logger.info(`  Errors:           ${s.errors}`);
   logger.info("═══════════════════════════════════════════════════════\n");
 
+  await scanner.close();
+  await healthServer.close();
+  pruner.stop();
   process.exit(0);
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main().catch((err) => { console.error("Fatal error:", err); process.exit(1); });

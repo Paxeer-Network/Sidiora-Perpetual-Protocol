@@ -1,0 +1,32 @@
+[2026-05-02 20:11:12.677] INFO  ═══════════════════════════════════════════════════════
+[2026-05-02 20:11:12.682] INFO    PPMM GraphQL Server (ROLE=graphql)
+[2026-05-02 20:11:12.683] INFO  ═══════════════════════════════════════════════════════
+[2026-05-02 20:11:12.683] INFO    DB:           postgres://postgres:***@localhost:5432/ppmm_indexer
+[2026-05-02 20:11:12.683] INFO    GraphQL port: 4000
+[2026-05-02 20:11:12.684] INFO  
+[2026-05-02 20:11:12.684] INFO  Running database migrations...
+[2026-05-02 20:11:12.761] ERROR   ✗ Migration failed: password authentication failed for user "postgres"
+[2026-05-02 20:11:30.310] INFO  ═══════════════════════════════════════════════════════
+[2026-05-02 20:11:30.314] INFO    PPMM GraphQL Server (ROLE=graphql)
+[2026-05-02 20:11:30.315] INFO  ═══════════════════════════════════════════════════════
+[2026-05-02 20:11:30.315] INFO    DB:           postgresql://postgres:***@shuttle.proxy.rlwy.net:26918/railway
+[2026-05-02 20:11:30.328] INFO    GraphQL port: 4000
+[2026-05-02 20:11:30.328] INFO  
+[2026-05-02 20:11:30.329] INFO  Running database migrations...
+[2026-05-02 20:11:32.234] INFO    ✓ Database ready
+[2026-05-02 20:11:32.244] INFO  [pruner] Starting prune cycle...
+[2026-05-02 20:11:32.245] INFO  [pruner] Scheduled — runs every 24h
+[2026-05-02 20:11:32.245] INFO  
+[2026-05-02 20:11:32.246] INFO  Starting GraphQL server...
+[2026-05-02 20:11:32.497] INFO  [subscriptions] PG LISTEN bridge started
+[2026-05-02 20:11:32.509] INFO    GraphQL API:  http://localhost:4000/graphql
+[2026-05-02 20:11:32.511] INFO    GraphQL WS:   ws://localhost:4000/graphql-ws
+[2026-05-02 20:11:32.511] INFO    REST API:     http://localhost:4000/api/*
+[2026-05-02 20:11:32.511] INFO    Health check: http://localhost:4000/health
+[2026-05-02 20:11:32.512] INFO    WebSocket:    ws://localhost:4000/ws
+[2026-05-02 20:11:32.513] INFO  GraphQL server ready.
+
+[2026-05-02 20:11:52.052] INFO  [pruner] price_updates: deleted 723,260 rows older than 30d
+[2026-05-02 20:11:52.337] INFO  [pruner] keeper_cycles: deleted 19,882 rows older than 30d
+[2026-05-02 20:11:52.398] INFO  [pruner] Cycle complete in 20.2s — 743,142 rows deleted
+[2026-05-02 20:12:43.499] INFO  SIGINT received — shutting down...

@@ -1,5 +1,7 @@
 const { pool } = require("../db/pool");
 const orderly = require("../orderly-proxy");
+const { gqlPubSub } = require("./subscriptions");
+const { withFilter } = require("graphql-subscriptions");
 
 /**
  * GraphQL resolvers — all queries read from the PostgreSQL indexer database.
@@ -510,11 +512,135 @@ const resolvers = {
     },
 
     // ============================================================
+    //  V5 — FEES
+    // ============================================================
+
+    fees: async (_, { userAddress, marketId, positionId, feeType, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM fees WHERE 1=1";
+      const params = [];
+      let idx = 1;
+      if (userAddress) { query += ` AND LOWER(user_address) = LOWER($${idx++})`; params.push(userAddress); }
+      if (marketId !== undefined && marketId !== null) { query += ` AND market_id = $${idx++}`; params.push(marketId); }
+      if (positionId) { query += ` AND position_id = $${idx++}`; params.push(positionId); }
+      if (feeType !== undefined && feeType !== null) { query += ` AND fee_type = $${idx++}`; params.push(feeType); }
+      query += ` ORDER BY block_timestamp DESC, log_index DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+      const res = await pool.query(query, params);
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — TRADE SETTLEMENTS
+    // ============================================================
+
+    tradeSettlements: async (_, { userAddress, marketId, positionId, tradeType, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM trade_settlements WHERE 1=1";
+      const params = [];
+      let idx = 1;
+      if (userAddress) { query += ` AND LOWER(user_address) = LOWER($${idx++})`; params.push(userAddress); }
+      if (marketId !== undefined && marketId !== null) { query += ` AND market_id = $${idx++}`; params.push(marketId); }
+      if (positionId) { query += ` AND position_id = $${idx++}`; params.push(positionId); }
+      if (tradeType !== undefined && tradeType !== null) { query += ` AND trade_type = $${idx++}`; params.push(tradeType); }
+      query += ` ORDER BY block_timestamp DESC, log_index DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+      const res = await pool.query(query, params);
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — OI SNAPSHOTS
+    // ============================================================
+
+    oiSnapshots: async (_, { marketId, limit, offset }) => {
+      const p = paginate(limit, offset);
+      const res = await pool.query(
+        `SELECT * FROM oi_snapshots WHERE market_id = $1 ORDER BY block_timestamp DESC LIMIT $2 OFFSET $3`,
+        [marketId, p.limit, p.offset]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — MARK PRICE HISTORY
+    // ============================================================
+
+    markPriceHistory: async (_, { marketId, limit, offset }) => {
+      const p = paginate(limit, offset);
+      const res = await pool.query(
+        `SELECT * FROM mark_price_history WHERE market_id = $1 ORDER BY block_timestamp DESC LIMIT $2 OFFSET $3`,
+        [marketId, p.limit, p.offset]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — VAULT BALANCE HISTORY
+    // ============================================================
+
+    vaultBalanceHistory: async (_, { tokenAddress, vaultType, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM vault_balance_history WHERE 1=1";
+      const params = [];
+      let idx = 1;
+      if (tokenAddress) { query += ` AND LOWER(token_address) = LOWER($${idx++})`; params.push(tokenAddress); }
+      if (vaultType !== undefined && vaultType !== null) { query += ` AND vault_type = $${idx++}`; params.push(vaultType); }
+      query += ` ORDER BY block_timestamp DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+      const res = await pool.query(query, params);
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — FUNDING PAYMENTS
+    // ============================================================
+
+    fundingPayments: async (_, { userAddress, marketId, positionId, limit, offset }) => {
+      const p = paginate(limit, offset);
+      let query = "SELECT * FROM funding_payments WHERE 1=1";
+      const params = [];
+      let idx = 1;
+      if (userAddress) { query += ` AND LOWER(user_address) = LOWER($${idx++})`; params.push(userAddress); }
+      if (marketId !== undefined && marketId !== null) { query += ` AND market_id = $${idx++}`; params.push(marketId); }
+      if (positionId) { query += ` AND position_id = $${idx++}`; params.push(positionId); }
+      query += ` ORDER BY block_timestamp DESC LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(p.limit, p.offset);
+      const res = await pool.query(query, params);
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — MARKET SNAPSHOTS
+    // ============================================================
+
+    marketSnapshots: async (_, { marketId, limit, offset }) => {
+      const p = paginate(limit, offset);
+      const res = await pool.query(
+        `SELECT * FROM market_snapshots WHERE market_id = $1 ORDER BY block_timestamp DESC LIMIT $2 OFFSET $3`,
+        [marketId, p.limit, p.offset]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
+    //  V5 — PROTOCOL SNAPSHOTS
+    // ============================================================
+
+    protocolSnapshots: async (_, { limit, offset }) => {
+      const p = paginate(limit, offset);
+      const res = await pool.query(
+        `SELECT * FROM protocol_snapshots ORDER BY block_timestamp DESC LIMIT $1 OFFSET $2`,
+        [p.limit, p.offset]
+      );
+      return toCamelArray(res.rows);
+    },
+
+    // ============================================================
     //  ENRICHED STATS (on-chain + Orderly)
     // ============================================================
 
     enrichedGlobalStats: async () => {
-      // On-chain stats
       const markets = await pool.query("SELECT COUNT(*) as c FROM markets");
       const positions = await pool.query(`
         SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'open') as open
@@ -540,7 +666,6 @@ const resolvers = {
         indexerBlock: Number(block.rows[0]?.value || 0),
       };
 
-      // Orderly volume stats
       let orderlyStats = null;
       try {
         orderlyStats = await orderly.getVolumeStats();
@@ -550,7 +675,6 @@ const resolvers = {
     },
 
     enrichedMarketStats: async (_, { marketId }) => {
-      // On-chain stats (reuse existing logic)
       const mRes = await pool.query("SELECT symbol FROM markets WHERE market_id = $1", [marketId]);
       const symbol = mRes.rows[0]?.symbol || null;
 
@@ -591,7 +715,6 @@ const resolvers = {
         latestFundingRate: fundRes.rows[0]?.rate_24h || null,
       };
 
-      // Orderly data for this market
       const orderlySymbol = symbol ? orderly.SYMBOL_MAP[symbol] : null;
       let ticker = null;
       let fundingRate = null;
@@ -639,7 +762,12 @@ const resolvers = {
     orderlyOpenInterests: async () => {
       return orderly.getOpenInterests();
     },
-  },
+
+    // ============================================================
+    //  V4 SPOT TRADING
+    // ============================================================
+
+  }, // <-- closes Query
 
   // ============================================================
   //  NESTED RESOLVERS
@@ -672,6 +800,27 @@ const resolvers = {
     },
   },
 
+  Fee: {
+    feeTypeName: (parent) => {
+      const names = { 0: "taker", 1: "maker", 2: "liquidation", 3: "borrowing" };
+      return names[parent.feeType] || `unknown_${parent.feeType}`;
+    },
+  },
+
+  TradeSettlement: {
+    tradeTypeName: (parent) => {
+      const names = { 0: "open", 1: "close", 2: "partial_close", 3: "liquidation", 4: "adl" };
+      return names[parent.tradeType] || `unknown_${parent.tradeType}`;
+    },
+  },
+
+  VaultBalanceRecord: {
+    vaultTypeName: (parent) => {
+      const names = { 0: "central", 1: "spot", 2: "insurance" };
+      return names[parent.vaultType] || `unknown_${parent.vaultType}`;
+    },
+  },
+
   Position: {
     market: async (parent) => {
       if (!parent.marketId && parent.marketId !== 0) return null;
@@ -695,6 +844,111 @@ const resolvers = {
         [parent.marketId]
       );
       return toCamel(res.rows[0]);
+    },
+  },
+
+  // ============================================================
+  //  SUBSCRIPTIONS
+  // ============================================================
+
+  Subscription: {
+    indexerStatusUpdated: {
+      subscribe: () => gqlPubSub.asyncIterator(["block_committed"]),
+      resolve: async () => {
+        const block = await pool.query(
+          "SELECT value FROM indexer_state WHERE key = 'last_indexed_block'"
+        );
+        const lastBlock = Number(block.rows[0]?.value || 0);
+        return { lastIndexedBlock: lastBlock, chainHead: null, isSynced: null, blocksScanned: 0, eventsProcessed: 0 };
+      },
+    },
+
+    latestPricesUpdated: {
+      subscribe: () => gqlPubSub.asyncIterator(["block_committed"]),
+      resolve: async () => {
+        const res = await pool.query("SELECT * FROM latest_prices ORDER BY market_id ASC");
+        return toCamelArray(res.rows);
+      },
+    },
+
+    priceUpdated: {
+      subscribe: withFilter(
+        () => gqlPubSub.asyncIterator(["block_committed"]),
+        () => true
+      ),
+      resolve: async (_, args) => {
+        const marketId = args?.marketId;
+        if (marketId == null) return null;
+        const res = await pool.query(
+          "SELECT * FROM latest_prices WHERE market_id = $1",
+          [marketId]
+        );
+        return res.rows[0] ? toCamel(res.rows[0]) : null;
+      },
+    },
+
+    positionChanged: {
+      subscribe: withFilter(
+        () => gqlPubSub.asyncIterator(["block_committed"]),
+        () => true
+      ),
+      resolve: async (_, args) => {
+        const userAddress = args?.userAddress;
+        if (!userAddress) return [];
+        const res = await pool.query(
+          "SELECT * FROM positions WHERE LOWER(user_address) = LOWER($1) ORDER BY position_id DESC",
+          [userAddress]
+        );
+        return toCamelArray(res.rows);
+      },
+    },
+
+    tradeCreated: {
+      subscribe: withFilter(
+        () => gqlPubSub.asyncIterator(["block_committed"]),
+        () => true
+      ),
+      resolve: async (_, args) => {
+        const marketId = args?.marketId;
+        if (marketId == null) return null;
+        const res = await pool.query(
+          "SELECT * FROM trades WHERE market_id = $1 ORDER BY block_timestamp DESC, log_index DESC LIMIT 1",
+          [marketId]
+        );
+        return res.rows[0] ? toCamel(res.rows[0]) : null;
+      },
+    },
+
+    liquidationCreated: {
+      subscribe: withFilter(
+        () => gqlPubSub.asyncIterator(["block_committed"]),
+        () => true
+      ),
+      resolve: async (_, args) => {
+        const marketId = args?.marketId;
+        if (marketId == null) return null;
+        const res = await pool.query(
+          "SELECT * FROM liquidations WHERE market_id = $1 ORDER BY block_timestamp DESC LIMIT 1",
+          [marketId]
+        );
+        return res.rows[0] ? toCamel(res.rows[0]) : null;
+      },
+    },
+
+    orderChanged: {
+      subscribe: withFilter(
+        () => gqlPubSub.asyncIterator(["block_committed"]),
+        () => true
+      ),
+      resolve: async (_, args) => {
+        const userAddress = args?.userAddress;
+        if (!userAddress) return null;
+        const res = await pool.query(
+          "SELECT * FROM orders WHERE LOWER(user_address) = LOWER($1) ORDER BY order_id DESC LIMIT 1",
+          [userAddress]
+        );
+        return res.rows[0] ? toCamel(res.rows[0]) : null;
+      },
     },
   },
 };

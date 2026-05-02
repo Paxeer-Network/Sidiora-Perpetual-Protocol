@@ -1,43 +1,65 @@
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
+const { makeExecutableSchema } = require("@graphql-tools/schema");
+const { WebSocketServer } = require("ws");
+const { useServer } = require("graphql-ws/use/ws");
+const { createServer } = require("http");
 const express = require("express");
 const cors = require("cors");
 const { typeDefs } = require("./schema");
 const { resolvers } = require("./resolvers");
+const { startSubscriptionBridge, stopSubscriptionBridge } = require("./subscriptions");
 const orderly = require("../orderly-proxy");
+const { pool } = require("../db/pool");
 
 /**
  * Create and start the GraphQL server + Orderly REST proxy + WS relay.
+ *
+ * scanner is optional — when omitted (ROLE=graphql), context falls back
+ * to a DB read for chain head. Pass it when running in combined mode.
+ *
  * @param {number} port
- * @param {object} scanner - Scanner instance for context
+ * @param {object|null} scanner - Scanner instance (optional)
  * @param {object} logger
- * @returns {Promise<{app: express.Application, server: ApolloServer}>}
+ * @returns {Promise<{app, server, httpServer}>}
  */
 async function startGraphQLServer(port, scanner, logger) {
   const app = express();
 
-  const server = new ApolloServer({
-    typeDefs,
-    resolvers,
+  const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+  const apolloServer = new ApolloServer({
+    schema,
     introspection: true,
   });
 
-  await server.start();
+  await apolloServer.start();
 
   app.use(
     "/graphql",
     cors(),
     express.json(),
-    expressMiddleware(server, {
+    expressMiddleware(apolloServer, {
       context: async () => {
         let chainHead = null;
         try {
-          chainHead = await scanner.getChainHead();
+          if (scanner) {
+            chainHead = await scanner.getChainHead();
+          } else {
+            const res = await pool.query(
+              "SELECT value FROM indexer_state WHERE key = 'last_indexed_block'"
+            );
+            chainHead = res.rows[0] ? Number(res.rows[0].value) : null;
+          }
         } catch {}
         return { scanner, chainHead };
       },
     })
   );
+
+  // ── Start PG LISTEN → in-process PubSub bridge ────────────────────
+  const { CONFIG } = require("../config");
+  await startSubscriptionBridge(CONFIG.databaseUrl, logger);
 
   // ============================================================
   //  Orderly REST Proxy Endpoints
@@ -258,13 +280,12 @@ async function startGraphQLServer(port, scanner, logger) {
 
   app.get("/health", async (req, res) => {
     try {
-      const { pool } = require("../db/pool");
       await pool.query("SELECT 1");
-      const stats = scanner.getStats();
+      const stats = scanner?.getStats() || {};
       res.json({
         status: "ok",
-        blocksScanned: stats.blocksScanned,
-        eventsProcessed: stats.eventsProcessed,
+        blocksScanned: stats.blocksScanned || 0,
+        eventsProcessed: stats.eventsProcessed || 0,
       });
     } catch (err) {
       res.status(500).json({ status: "error", message: err.message });
@@ -272,19 +293,26 @@ async function startGraphQLServer(port, scanner, logger) {
   });
 
   // ============================================================
-  //  Start HTTP server + WebSocket relay
+  //  Start HTTP server + WebSocket servers
   // ============================================================
 
   return new Promise((resolve) => {
-    const httpServer = app.listen(port, () => {
+    const httpServer = createServer(app);
+
+    // ── graphql-ws subscription server on /graphql-ws ───────────
+    const subscriptionWss = new WebSocketServer({ server: httpServer, path: "/graphql-ws" });
+    const wsServerCleanup = useServer({ schema }, subscriptionWss);
+
+    httpServer.listen(port, () => {
       logger.info(`  GraphQL API:  http://localhost:${port}/graphql`);
+      logger.info(`  GraphQL WS:   ws://localhost:${port}/graphql-ws`);
       logger.info(`  REST API:     http://localhost:${port}/api/*`);
       logger.info(`  Health check: http://localhost:${port}/health`);
 
-      // Start WebSocket orderbook relay
+      // Start WebSocket orderbook relay on /ws
       startOrderbookRelay(httpServer, logger);
 
-      resolve({ app, server, httpServer });
+      resolve({ app, server: apolloServer, httpServer, wsServerCleanup });
     });
   });
 }

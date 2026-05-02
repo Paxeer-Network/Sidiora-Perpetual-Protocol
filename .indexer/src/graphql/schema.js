@@ -302,6 +302,150 @@ const typeDefs = gql`
   }
 
   # ============================================================
+  #  V5 — FEE (FeeCollected)
+  # ============================================================
+
+  type Fee {
+    id: Int!
+    positionId: BigDecimal!
+    userAddress: String!
+    marketId: Int!
+    feeType: Int!
+    feeTypeName: String
+    feeUsd: BigDecimal!
+    feeTokens: BigDecimal!
+    tokenAddress: String!
+    blockNumber: Int!
+    txHash: String!
+    logIndex: Int!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — TRADE SETTLEMENT (TradeSettled)
+  # ============================================================
+
+  type TradeSettlement {
+    id: Int!
+    positionId: BigDecimal!
+    userAddress: String!
+    marketId: Int!
+    tradeType: Int!
+    tradeTypeName: String
+    sizeUsd: BigDecimal!
+    executionPrice: BigDecimal!
+    grossPnl: BigDecimal!
+    totalFeesUsd: BigDecimal!
+    borrowingFeeUsd: BigDecimal!
+    fundingPaidUsd: BigDecimal!
+    netPayoutTokens: BigDecimal!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — OI SNAPSHOT (OpenInterestChanged)
+  # ============================================================
+
+  type OiSnapshot {
+    id: Int!
+    marketId: Int!
+    longOi: BigDecimal!
+    shortOi: BigDecimal!
+    deltaUsd: BigDecimal!
+    isIncrease: Boolean!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — MARK PRICE HISTORY (MarkPriceChanged)
+  # ============================================================
+
+  type MarkPriceRecord {
+    id: Int!
+    marketId: Int!
+    markPrice: BigDecimal!
+    indexPrice: BigDecimal!
+    baseReserve: BigDecimal!
+    quoteReserve: BigDecimal!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — VAULT BALANCE HISTORY (VaultBalanceChanged)
+  # ============================================================
+
+  type VaultBalanceRecord {
+    id: Int!
+    tokenAddress: String!
+    vaultType: Int!
+    vaultTypeName: String
+    newBalance: BigDecimal!
+    delta: BigDecimal!
+    isIncrease: Boolean!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — FUNDING PAYMENT (PositionFundingApplied)
+  # ============================================================
+
+  type FundingPayment {
+    id: Int!
+    positionId: BigDecimal!
+    userAddress: String!
+    marketId: Int!
+    fundingPaymentUsd: BigDecimal!
+    newCollateralUsd: BigDecimal!
+    newCollateralAmount: BigDecimal!
+    blockNumber: Int!
+    txHash: String!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — MARKET SNAPSHOT (MarketSnapshot)
+  # ============================================================
+
+  type MarketSnapshotRecord {
+    id: Int!
+    marketId: Int!
+    longOi: BigDecimal!
+    shortOi: BigDecimal!
+    markPrice: BigDecimal!
+    indexPrice: BigDecimal!
+    fundingRatePerSecond: BigDecimal!
+    fundingRate24h: BigDecimal!
+    volume24hUsd: BigDecimal!
+    onchainTimestamp: Int!
+    blockNumber: Int!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
+  #  V5 — PROTOCOL SNAPSHOT (ProtocolSnapshot)
+  # ============================================================
+
+  type ProtocolSnapshotRecord {
+    id: Int!
+    totalPositions: BigDecimal!
+    totalOpenPositions: BigDecimal!
+    totalMarkets: BigDecimal!
+    tvlUsd: BigDecimal!
+    insuranceTotalUsd: BigDecimal!
+    onchainTimestamp: Int!
+    blockNumber: Int!
+    blockTimestamp: DateTime!
+  }
+
+  # ============================================================
   #  AGGREGATES
   # ============================================================
 
@@ -533,6 +677,70 @@ const typeDefs = gql`
       offset: Int
     ): [TradingAccountEvent!]!
 
+    # V5 — Fees
+    fees(
+      userAddress: String
+      marketId: Int
+      positionId: String
+      feeType: Int
+      limit: Int
+      offset: Int
+    ): [Fee!]!
+
+    # V5 — Trade Settlements
+    tradeSettlements(
+      userAddress: String
+      marketId: Int
+      positionId: String
+      tradeType: Int
+      limit: Int
+      offset: Int
+    ): [TradeSettlement!]!
+
+    # V5 — OI Snapshots
+    oiSnapshots(
+      marketId: Int!
+      limit: Int
+      offset: Int
+    ): [OiSnapshot!]!
+
+    # V5 — Mark Price History
+    markPriceHistory(
+      marketId: Int!
+      limit: Int
+      offset: Int
+    ): [MarkPriceRecord!]!
+
+    # V5 — Vault Balance History
+    vaultBalanceHistory(
+      tokenAddress: String
+      vaultType: Int
+      limit: Int
+      offset: Int
+    ): [VaultBalanceRecord!]!
+
+    # V5 — Funding Payments
+    fundingPayments(
+      userAddress: String
+      marketId: Int
+      positionId: String
+      limit: Int
+      offset: Int
+    ): [FundingPayment!]!
+
+    # V5 — Market Snapshots
+    marketSnapshots(
+      marketId: Int!
+      limit: Int
+      offset: Int
+    ): [MarketSnapshotRecord!]!
+
+    # V5 — Protocol Snapshots
+    protocolSnapshots(
+      limit: Int
+      offset: Int
+    ): [ProtocolSnapshotRecord!]!
+
     # Enriched Stats (on-chain + Orderly)
     enrichedGlobalStats: EnrichedGlobalStats!
     enrichedMarketStats(marketId: Int!): EnrichedMarketStats!
@@ -542,7 +750,40 @@ const typeDefs = gql`
     orderlyFundingRates: [OrderlyFundingRate!]!
     orderlyPriceChanges: [OrderlyPriceChange!]!
     orderlyOpenInterests: [OrderlyOpenInterest!]!
+
+    # ============================================================
+    #  V4 SPOT TRADING
+    # ============================================================
+
   }
+
+  # ============================================================
+  #  SUBSCRIPTIONS
+  # ============================================================
+
+  type Subscription {
+    # Fires after every indexer commit — carry current indexer state
+    indexerStatusUpdated: IndexerStatus!
+
+    # Fires when any price changes — returns all latest prices
+    latestPricesUpdated: [LatestPrice!]!
+
+    # Fires when a specific market's price changes
+    priceUpdated(marketId: Int!): LatestPrice
+
+    # Fires when a position event touches a specific user's portfolio
+    positionChanged(userAddress: String!): [Position!]!
+
+    # Fires when a new trade settles in a specific market
+    tradeCreated(marketId: Int!): Trade
+
+    # Fires when a liquidation occurs in a specific market
+    liquidationCreated(marketId: Int!): Liquidation
+
+    # Fires when a new order event for a specific user
+    orderChanged(userAddress: String!): Order
+  }
+
 `;
 
 module.exports = { typeDefs };
