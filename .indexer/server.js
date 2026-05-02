@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 
-const ROLE = process.env.ROLE || "all";
+const ROLE = (process.env.ROLE || "all").toLowerCase();
 
-if (ROLE === "graphql") {
-  startGraphQLOnly();
-} else {
-  require("./index.js");
-}
+if      (ROLE === "graphql")  startGraphQLOnly();
+else if (ROLE === "indexer")  require("./index.js");
+else                          require("./index.js"); // "all" — index.js starts both
 
+// ── GraphQL-only mode ────────────────────────────────────────
 async function startGraphQLOnly() {
-  const { CONFIG }           = require("./src/config");
-  const { createLogger }     = require("./src/logger");
-  const { migrate }          = require("./src/db/migrate");
+  const { CONFIG }             = require("./src/config");
+  const { createLogger }       = require("./src/logger");
+  const { migrate }            = require("./src/db/migrate");
   const { startGraphQLServer } = require("./src/graphql/server");
   const { stopSubscriptionBridge } = require("./src/graphql/subscriptions");
-  const pruner               = require("./src/db/pruner");
+  const pruner                 = require("./src/db/pruner");
 
   const logger = createLogger(CONFIG.logLevel);
 
